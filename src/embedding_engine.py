@@ -105,6 +105,11 @@ class APIEmbeddingEngine(BaseEmbeddingEngine):
     ):
         self.api_key = api_key
         self.base_url = base_url
+        # Gemini 的 OpenAI-compat embeddings 端点内部转成 BatchEmbedContentsRequest，
+        # 要求 model 形如 "models/gemini-embedding-001"；裸名会报
+        # "unexpected model name format"（OB-E001）。这里对 Gemini 端点自动补前缀。
+        if "generativelanguage.googleapis.com" in (base_url or "") and not model.startswith("models/"):
+            model = f"models/{model}"
         self.model = model
         self._dim = dim
         self._client = AsyncOpenAI(
@@ -155,6 +160,61 @@ class APIEmbeddingEngine(BaseEmbeddingEngine):
 
 
 # ============================================================
+# API 后端：Gemini 原生 REST
+# ============================================================
+
+class GeminiNativeEmbeddingEngine(BaseEmbeddingEngine):
+    """Gemini 原生 REST embedding（不走 OpenAI-compat，直接调 embedContent）。
+
+    端点：POST .../v1beta/models/{model}:embedContent?key={api_key}
+    """
+
+    def __init__(self, api_key: str, model: str, dim: int = _GEMINI_DEFAULT_DIM):
+        self.api_key = api_key
+        self.model = model
+        self._dim = dim
+
+    def model_name(self) -> str:
+        return self.model
+
+    def vector_dim(self) -> int:
+        return self._dim
+
+    def generate(self, text: str) -> list[float]:
+        try:
+            return asyncio.run(self.generate_async(text))
+        except RuntimeError:
+            logger.warning("[embedding] sync generate() called inside event loop; use generate_async")
+            return []
+
+    async def generate_async(self, text: str) -> list[float]:
+        if not text or not text.strip():
+            return []
+        import httpx
+        model_id = self.model.removeprefix("models/").strip()
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:embedContent"
+        payload = {"content": {"parts": [{"text": text[:_MAX_INPUT_CHARS]}]}}
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as c:
+                r = await c.post(url, params={"key": self.api_key}, json=payload)
+                r.raise_for_status()
+            values = r.json().get("embedding", {}).get("values", [])
+            if values and len(values) != self._dim:
+                self._dim = len(values)
+            return list(values) if values else []
+        except Exception as e:
+            try:
+                from errors import record_error  # type: ignore
+            except ImportError:
+                from .errors import record_error  # type: ignore
+            record_error(
+                "OB-E001",
+                f"backend=gemini_native model={self.model} err={type(e).__name__}: {e}",
+            )
+            return []
+
+
+# ============================================================
 # 门面：EmbeddingEngine — 对外保持原接口
 # ============================================================
 
@@ -188,24 +248,50 @@ class EmbeddingEngine:
             self._init_db()
             return
 
+        # 解析 api_format（提前到 key 检查之前）。本地 ollama/local 后端无需真实 key，
+        # 不能因为「key 为空」就被打到待机模式。
+        api_format = (embed_cfg.get("api_format") or "").strip() or os.environ.get("OMBRE_EMBED_FORMAT", "openai_compat")
+        self.api_format = api_format
+        is_local = api_format in ("ollama", "local")
+
         api_key = (embed_cfg.get("api_key") or "").strip()
         if not api_key:
             api_key = os.environ.get("OMBRE_EMBED_API_KEY", "").strip()
+        # 本地模型没有 key 概念，但 OpenAI 客户端库要求 api_key 非空 → 补占位符。
+        # 占位符会作为 Bearer 发给 ollama，ollama 不校验、照单全收。
+        if is_local and not api_key:
+            api_key = "ollama"
+
         if not api_key:
-            # 无 key → 待机模式：enabled=False，DB 仍初始化，key 通过热更新后激活
+            # 无 key（仅云端后端会走到这）→ 待机模式：enabled=False，DB 仍初始化，key 热更新后激活
             logger.warning("[embedding] enabled=true but no api_key — starting in standby (disabled); set OMBRE_EMBED_API_KEY to activate")
             self._init_db()
             return
-        base_url = (
-            (embed_cfg.get("base_url") or "").strip()
-            or "https://generativelanguage.googleapis.com/v1beta/openai/"
-        )
-        model = embed_cfg.get("model") or "gemini-embedding-001"
-        self._backend = APIEmbeddingEngine(
-            api_key=api_key,
-            base_url=base_url,
-            model=model,
-        )
+
+        if is_local:
+            # 本地 Ollama：OpenAI 兼容 /v1/embeddings；默认连同网络下的 ombre-ollama 容器
+            base_url = (
+                (embed_cfg.get("base_url") or "").strip()
+                or os.environ.get("OMBRE_OLLAMA_URL", "").strip()
+                or "http://ombre-ollama:11434/v1"
+            )
+            model = embed_cfg.get("model") or "bge-m3"
+            # bge-m3 = 1024 维；APIEmbeddingEngine 拿到第一颗向量后还会自校正，这里给正确默认值
+            try:
+                dim = int(embed_cfg.get("dim") or 1024)
+            except (TypeError, ValueError):
+                dim = 1024
+            self._backend = APIEmbeddingEngine(api_key=api_key, base_url=base_url, model=model, dim=dim)
+        elif api_format == "gemini":
+            model = embed_cfg.get("model") or "gemini-embedding-001"
+            self._backend = GeminiNativeEmbeddingEngine(api_key=api_key, model=model)
+        else:
+            model = embed_cfg.get("model") or "gemini-embedding-001"
+            base_url = (
+                (embed_cfg.get("base_url") or "").strip()
+                or "https://generativelanguage.googleapis.com/v1beta/openai/"
+            )
+            self._backend = APIEmbeddingEngine(api_key=api_key, base_url=base_url, model=model)
 
         self.model = self._backend.model_name()
         self.enabled = True
@@ -457,5 +543,6 @@ class EmbeddingEngine:
 __all__ = [
     "BaseEmbeddingEngine",
     "APIEmbeddingEngine",
+    "GeminiNativeEmbeddingEngine",
     "EmbeddingEngine",
 ]

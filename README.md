@@ -339,21 +339,42 @@ docker compose -f deploy/docker-compose.yml up -d
 | `dehydration.model` | 脱水/打标 LLM 模型 | `gemini-2.0-flash` |
 | `dehydration.base_url` | LLM API 地址 | `https://generativelanguage.googleapis.com/v1beta/openai/` |
 | `dehydration.max_tokens` | 模型最大输出 token | `4096`（必须足够大，否则 JSON 截断导致域分类失败） |
-| `embedding.backend` | `local`（本地 bge-m3）/ `api`（云端） | `api`（Docker 默认） |
-| `embedding.model` | embedding 模型（仅 api 后端用） | `gemini-embedding-001` |
+| `embedding.api_format` | `gemini`（云端）/ `ollama`（本地 bge-m3）/ `openai_compat` | `gemini` |
+| `embedding.model` | embedding 模型 | 云端 `gemini-embedding-001` / 本地 `bge-m3` |
 | `decay.lambda` | 衰减速率，越大越快忘 | `0.05` |
 | `merge_threshold` | 合并相似度阈值 (0-100) | `75` |
 
 > ⚠️ **`dehydration.max_tokens` 不能太小**：Gemini 2.5 系列模型有「思考 token」开销，如果 max_tokens 设得太小（如 256/512），思考 token 会耗尽预算，JSON 响应被截断，导致所有记忆被错误分类为「未分类」。推荐 `gemini-2.0-flash`（无思考开销）或将 max_tokens 设为 `4096` 以上。
 
-### Embedding 两后端
+### Embedding 两后端：云端 Gemini vs 本地 bge-m3
 
-| backend | 类型 | 体积 | 维度 | 备注 |
+| 后端 | 类型 | 维度 | 资源 | 适合 |
 |---|---|---|---|---|
-| `local` | 本地 ONNX（fastembed 内置 bge-m3 优化版） | ~600–800MB 模型 | 1024 | 多语言，CPU 推理；首次启动自动下载 |
-| `api` | 云端 OpenAI 兼容 | — | 取决于模型（Gemini 默认 3072） | 需 `OMBRE_EMBED_API_KEY`，免费额度够用 |
+| **云端**（`api_format: gemini`） | Gemini API | 3072 | 0（不占本机） | 大多数人。免费额度 1500 req/day 够用，开箱即用 |
+| **本地**（`api_format: ollama`） | Ollama + bge-m3 | 1024 | **约 2–3GB 空闲内存** + 1.2GB 磁盘，纯 CPU | 不想出网 / 没有 API key / 数据敏感 / 自托管 |
 
-切换：Dashboard → 设置页 → Embedding 区 → 选目标 backend → 点「切换 / 重算所有 embedding…」，自动备份旧 DB 并后台重算。
+> 💾 **本地模型内存提醒**：bge-m3 加载后常驻约 2–3GB 内存。低配机器（<2GB 空闲内存）建议继续用云端；纯 CPU 即可推理，首条查询冷启动约 1–9s，之后 <0.5s。
+
+**本地向量化怎么搭（一键，无需命令行）**
+
+本地模型跑在一个独立的 `ollama` 容器里（OB 不直接管它，所以最稳）。两步：
+
+1. **启动 ollama 容器**（一次性）。用源码部署的话，`deploy/docker-compose.yml` 里已带 `ollama` 服务，直接：
+   ```bash
+   docker compose -f deploy/docker-compose.yml up -d ollama
+   ```
+   或独立起一个（和 OB 同一 docker 网络即可）：
+   ```bash
+   docker run -d --name ombre-ollama --restart unless-stopped \
+     --network <OB所在网络> -v ollama:/root/.ollama ollama/ollama
+   ```
+2. **Dashboard → 设置 → 向量化 → 「🖥️ 本地向量模型」面板 → 点「🚀 一键搭建本地向量化」**。它会自动：下载 bge-m3（约 1.2GB，带进度条）→ 切换后端 → 后台重算全库向量。期间照常使用，检索暂用旧库。
+
+> 🌐 **国内网络**：模型下载默认走 ollama 官方源。拉不动时，在面板「分步操作」里换下载镜像（选 ModelScope 或填自定义 registry 前缀），再点「仅下载」。
+
+**云端 ↔ 本地随时切换**：Dashboard → 设置 → 向量化面板 →「一键搭建本地向量化」或「切回云端 Gemini」。
+
+> ⚠️ 两个后端向量维度不同（3072 vs 1024），**每次切换都会全库重算**（自动备份旧 DB、后台进行、失败不动旧库）。不要频繁来回切。
 
 ---
 

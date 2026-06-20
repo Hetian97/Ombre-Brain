@@ -8,29 +8,36 @@
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 <link rel="apple-touch-icon" href="/static/icon.svg">
 <link rel="manifest" href="/static/manifest.json">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
 <style>
   :root {
-    /* === 侘寂 wabi-sabi palette === */
-    --bg: #FAF8F3;                    /* 米白 */
-    --bg-gradient: #FAF8F3;
-    --surface: #FAF8F3;
-    --surface-solid: #F5F1E8;
-    --border: #D9D5CB;                /* 淺灰线 */
-    --border-strong: #B8B0A0;
+    /* === 复古掌机 retro-handheld palette — warm cream plastic + pale LCD + gold === */
+    --bg: #E7E2D8;                    /* 外环境米灰（带颗粒感） */
+    --bg-gradient: #E7E2D8;
+    --surface: #F4F0E8;              /* 凸起塑料外壳 */
+    --surface-solid: #EDE8DE;        /* 次级外壳块 */
+    --border: #DCD6CA;                /* 极柔的分隔（几乎无线条感） */
+    --border-strong: #C7C0B2;
     --text: #2C2A26;                  /* 墨黑 */
-    --text-dim: #6B665C;
-    --text-light: #9A9489;
-    --accent: #B85C3C;                /* 朱砂 */
-    --accent-light: #C26E50;
-    --accent-glow: rgba(184, 92, 60, 0.08);
+    --text-dim: #6E695E;
+    --text-light: #9E988C;
+    --accent: #C2982F;                /* 暖金（高亮/激活态） */
+    --accent-light: #D7B14A;
+    --accent-glow: rgba(194, 152, 47, 0.22);
     --positive: #6B8E5C;
-    --negative: #B85C3C;
+    --negative: #BE5A41;              /* 删除/危险红 */
     --warning: #B89762;
-    --shadow-light: transparent;
-    --shadow-dark: rgba(44, 42, 38, 0.06);
-    --shadow-dark-subtle: rgba(44, 42, 38, 0.03);
+    /* 拟物化双向光影：高光（左上）+ 阴影（右下）。原作者把高光设成透明=关闭了立体感，这里点亮。 */
+    --shadow-light: rgba(255, 253, 247, 0.9);
+    --shadow-dark: rgba(150, 138, 116, 0.40);
+    --shadow-dark-subtle: rgba(150, 138, 116, 0.22);
+    /* LCD 点阵屏 */
+    --lcd: #C7C9BC;                   /* 屏底（灰绿单色） */
+    --lcd-text: #25271E;              /* 屏上深字 */
+    --lcd-dim: #5B5D4F;
+    --lcd-glow: rgba(37, 39, 30, 0.18);
+    --shell-radius: 18px;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -654,6 +661,406 @@
     .config-row label { width: 100%; }
     .breath-flow { display: none; }
   }
+
+  /* ============================================================
+     RETRO HANDHELD CONSOLE LAYER · 拟物化复古掌机
+     级联最后，叠加在基础规则之上。所有可交互实体都遵循同一套
+     塑料外壳光影 + LCD 点阵屏 + 暖金激活 + :active 机械按压。
+     设计语言统一，禁止硬 1px 黑线、禁止高对比生硬边框。
+     ============================================================ */
+
+  /* —— 外环境：极柔颗粒底纹（像磨砂塑料桌面） —— */
+  body {
+    background:
+      radial-gradient(circle at 1px 1px, rgba(120,108,86,0.05) 1px, transparent 1.4px) 0 0 / 5px 5px,
+      var(--bg);
+  }
+
+  /* —— 字体助手：等宽/像素屏内字体（拉丁与数字用，中文回退到衬线） —— */
+  .lcd-type  { font-family:'Share Tech Mono','SF Mono',Consolas,monospace; letter-spacing:0.5px; }
+  .pixel-type{ font-family:'VT323',monospace; }
+
+  /* ============ 顶栏：一体注塑面板，靠柔影分层而非边框 ============ */
+  .header {
+    background: var(--surface);
+    backdrop-filter: none;
+    border-bottom: none;
+    box-shadow: 0 6px 18px var(--shadow-dark-subtle), inset 0 1px 0 rgba(255,255,255,0.65);
+  }
+  .header h1 {
+    font-family:'Share Tech Mono',monospace;
+    color: var(--text);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-size: 19px;
+  }
+  .header .version-badge, .header .stats { font-family:'Share Tech Mono',monospace; }
+  /* 顶栏里的小圆/小方按钮 → 凸起实体键 */
+  .header button, .search-bar input {
+    border: none !important;
+    border-radius: 12px !important;
+    box-shadow: 4px 4px 9px var(--shadow-dark-subtle), -4px -4px 8px var(--shadow-light) !important;
+    transition: all .15s ease;
+  }
+  .header button { background: var(--surface) !important; color: var(--text-dim) !important; }
+  .header button:hover { color: var(--accent) !important; transform: translateY(-1px); }
+  .header button:active { transform: translateY(1px); box-shadow: inset 3px 3px 6px var(--shadow-dark-subtle), inset -2px -2px 5px var(--shadow-light) !important; }
+  .search-bar input { box-shadow: inset 3px 3px 7px var(--shadow-dark-subtle), inset -3px -3px 6px var(--shadow-light) !important; }
+  #heartbeat-indicator, #anchor-counter { font-family:'Share Tech Mono',monospace; }
+
+  /* ============ 标签页 → 内凹托盘里的一排实体键帽（keycap selector） ============ */
+  .tabs {
+    margin: 16px 40px 8px;
+    padding: 8px 10px;
+    background: var(--surface-solid);
+    backdrop-filter: none;
+    border-bottom: none;
+    border-radius: 16px;
+    gap: 6px;
+    flex-wrap: wrap;
+    box-shadow: inset 4px 4px 10px var(--shadow-dark-subtle), inset -3px -3px 7px var(--shadow-light);
+  }
+  .tab {
+    border-bottom: none !important;
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 9px 16px 7px;
+    box-shadow: 4px 4px 10px var(--shadow-dark-subtle), -4px -4px 9px var(--shadow-light);
+    transition: transform .12s ease, box-shadow .15s ease, color .15s ease;
+  }
+  .tab .tab-en { font-family:'Share Tech Mono',monospace; font-style: normal; letter-spacing: 0.5px; }
+  .tab:hover { transform: translateY(-1.5px); }
+  .tab.active {
+    color: var(--accent);
+    transform: translateY(-1.5px);
+    box-shadow: 4px 4px 11px var(--shadow-dark-subtle), -4px -4px 9px var(--shadow-light),
+                0 0 0 2px var(--accent-glow), inset 0 0 14px rgba(194,152,47,0.10);
+  }
+  .tab.active .tab-en { color: var(--accent); }
+  .tab:active { transform: translateY(1px); box-shadow: inset 3px 3px 7px var(--shadow-dark-subtle), inset -2px -2px 6px var(--shadow-light); }
+  .tab-spacer { box-shadow: none; background: transparent; }
+
+  /* ============ 模块块：Bento 注塑外壳（无边框，靠留白+柔影聚合） ============ */
+  .config-section, .breath-info, .breath-flow {
+    border: none !important;
+    border-radius: var(--shell-radius);
+    background: var(--surface);
+    box-shadow: 8px 8px 22px var(--shadow-dark-subtle), -7px -7px 16px var(--shadow-light), inset 0 1px 0 rgba(255,255,255,0.55);
+  }
+  .config-section { padding: 26px 28px; }
+  .config-section h3 {
+    font-family:'Share Tech Mono',monospace;
+    color: var(--text);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+  }
+  /* 设置页顶部的锚点药丸 → 小实体键 */
+  #settings-view a[href^="#sec-"] {
+    border: none !important;
+    background: var(--surface-solid);
+    box-shadow: 3px 3px 7px var(--shadow-dark-subtle), -3px -3px 6px var(--shadow-light);
+    border-radius: 20px !important;
+    transition: all .15s ease;
+  }
+  #settings-view a[href^="#sec-"]:hover { transform: translateY(-1px); color: var(--accent) !important; }
+
+  /* ============ 输入 / 下拉 / 文本域：统一内凹 LCD 输入槽 ============ */
+  input[type=text], input[type=password], input[type=number], input[type=date],
+  select, textarea, .config-row input, .config-row select, .breath-controls input {
+    border: none !important;
+    border-radius: 11px !important;
+    background: var(--surface-solid) !important;
+    box-shadow: inset 3px 3px 7px var(--shadow-dark-subtle), inset -3px -3px 6px var(--shadow-light) !important;
+    transition: box-shadow .2s ease;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    box-shadow: inset 3px 3px 7px var(--shadow-dark-subtle), inset -3px -3px 6px var(--shadow-light), 0 0 0 2px var(--accent-glow) !important;
+  }
+
+  /* ============ 按钮：暖金主功能键 + 中性实体键，均带机械按压 ============ */
+  .btn-primary, .breath-controls button {
+    background: linear-gradient(150deg, var(--accent-light), var(--accent)) !important;
+    color: #fffdf5 !important;
+    border: none !important;
+    border-radius: 13px !important;
+    box-shadow: 5px 5px 13px var(--shadow-dark), -4px -4px 10px var(--shadow-light), inset 0 1px 0 rgba(255,255,255,0.35) !important;
+    text-shadow: 0 1px 1px rgba(120,90,20,0.35);
+  }
+  .btn-primary:hover, .breath-controls button:hover { transform: translateY(-2px); }
+  .btn-primary:active, .breath-controls button:active {
+    transform: translateY(1px);
+    box-shadow: inset 4px 4px 9px rgba(120,90,20,0.35), inset -2px -2px 6px rgba(255,255,255,0.25) !important;
+  }
+  .btn-secondary, .filter-btn {
+    border: none !important;
+    border-radius: 13px !important;
+    background: var(--surface) !important;
+    color: var(--text-dim);
+    box-shadow: 5px 5px 12px var(--shadow-dark-subtle), -4px -4px 10px var(--shadow-light) !important;
+  }
+  .btn-secondary:hover, .filter-btn:hover { transform: translateY(-2px); color: var(--accent); }
+  .btn-secondary:active, .filter-btn:active {
+    transform: translateY(1px);
+    box-shadow: inset 4px 4px 9px var(--shadow-dark-subtle), inset -3px -3px 7px var(--shadow-light) !important;
+  }
+  .filter-btn.active {
+    color: #fffdf5;
+    background: linear-gradient(150deg, var(--accent-light), var(--accent)) !important;
+    box-shadow: inset 3px 3px 7px rgba(120,90,20,0.30), inset -2px -2px 5px rgba(255,255,255,0.25) !important;
+  }
+  /* 通用裸 <button>（大量内联小按钮）→ 统一成中性实体键，避免风格冲突。
+     仅用简单类否定，保证选择器在所有引擎可解析；与 .header button / .close-btn 的
+     专属规则靠各自 !important 协调。 */
+  button:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.tab):not(.filter-btn):not(.close-btn) {
+    border: none !important;
+    border-radius: 10px !important;
+    background: var(--surface-solid);
+    color: var(--text-dim);
+    box-shadow: 3px 3px 7px var(--shadow-dark-subtle), -3px -3px 6px var(--shadow-light);
+    transition: all .14s ease;
+    cursor: pointer;
+  }
+  button:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.tab):not(.filter-btn):not(.close-btn):hover { color: var(--accent); transform: translateY(-1px); }
+  button:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.tab):not(.filter-btn):not(.close-btn):active { transform: translateY(1px); box-shadow: inset 3px 3px 6px var(--shadow-dark-subtle), inset -2px -2px 5px var(--shadow-light); }
+
+  /* ============ 记忆桶行 → 凸起塑料长条键 ============ */
+  .bucket-row {
+    border: none !important;
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: 5px 5px 13px var(--shadow-dark-subtle), -4px -4px 10px var(--shadow-light);
+  }
+  .bucket-row:hover { transform: translateY(-2px); box-shadow: 7px 7px 17px var(--shadow-dark), -5px -5px 12px var(--shadow-light); }
+  .bucket-row:active { transform: translateY(0); box-shadow: inset 3px 3px 7px var(--shadow-dark-subtle), inset -2px -2px 5px var(--shadow-light); }
+  .bucket-row .score, .bucket-row .time, .bucket-row .domain { font-family:'Share Tech Mono',monospace; }
+
+  /* ============ LCD 点阵屏：网络拓扑图 ============ */
+  #network-view .network-legend { font-family:'Share Tech Mono',monospace; }
+  #network-canvas {
+    border: none !important;
+    border-radius: 16px;
+    background: var(--lcd) !important;
+    /* 外圈塑料黑边 bezel + 内凹厚度 + 微像素网格 */
+    background-image:
+      repeating-linear-gradient(0deg, rgba(37,39,30,0.045) 0 1px, transparent 1px 2px),
+      repeating-linear-gradient(90deg, rgba(37,39,30,0.045) 0 1px, transparent 1px 2px) !important;
+    box-shadow:
+      inset 6px 6px 16px rgba(80,78,58,0.30), inset -5px -5px 12px rgba(255,255,255,0.30),
+      0 0 0 10px var(--surface), 10px 10px 26px var(--shadow-dark-subtle), -6px -6px 16px var(--shadow-light) !important;
+  }
+  /* 屏内迷你滚动日志行（mini terminal） */
+  #network-terminal {
+    margin: 22px 4px 0;
+    padding: 9px 16px;
+    border-radius: 10px;
+    background: var(--lcd);
+    color: var(--lcd-text);
+    font-family:'Share Tech Mono',monospace;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 0 3px var(--lcd-glow);
+    box-shadow: inset 3px 3px 8px rgba(80,78,58,0.28), inset -3px -3px 7px rgba(255,255,255,0.30);
+  }
+  #network-terminal::before { content:'> '; color: var(--accent); }
+
+  /* ============ Breath 评分流程：屏内点阵卡片 ============ */
+  .flow-step {
+    border: none !important;
+    border-radius: 12px;
+    background: var(--lcd);
+    color: var(--lcd-text);
+    font-family:'Share Tech Mono',monospace;
+    box-shadow: inset 3px 3px 7px rgba(80,78,58,0.25), inset -3px -3px 6px rgba(255,255,255,0.3);
+    text-shadow: 0 0 2px var(--lcd-glow);
+  }
+  .flow-step.active { color: var(--accent); box-shadow: inset 3px 3px 7px rgba(80,78,58,0.25), inset -3px -3px 6px rgba(255,255,255,0.3), 0 0 0 2px var(--accent-glow); }
+
+  /* ============ 详情面板 / 弹窗：注塑外壳 ============ */
+  .detail-panel { border-left: none; border-radius: var(--shell-radius) 0 0 var(--shell-radius); box-shadow: -10px 0 30px var(--shadow-dark-subtle); }
+  .detail-panel h2 { font-family:'Share Tech Mono',monospace; letter-spacing: 1px; text-transform: uppercase; color: var(--text); }
+  .detail-content { border: none !important; border-radius: 12px; box-shadow: inset 3px 3px 8px var(--shadow-dark-subtle), inset -3px -3px 6px var(--shadow-light); }
+  .close-btn { border-radius: 50% !important; box-shadow: 3px 3px 7px var(--shadow-dark-subtle), -3px -3px 6px var(--shadow-light); }
+  .close-btn:active { box-shadow: inset 3px 3px 6px var(--shadow-dark-subtle); }
+
+  /* ============ 硬件拨片开关 toggle（含 LED 指示灯） ============ */
+  .hw-switch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: 48px; height: 26px;
+    border-radius: 14px;
+    background: var(--surface-solid);
+    box-shadow: inset 3px 3px 6px var(--shadow-dark-subtle), inset -2px -2px 5px var(--shadow-light);
+    cursor: pointer;
+    transition: background .2s;
+    flex-shrink: 0;
+  }
+  .hw-switch::after {
+    content:''; position:absolute; left:3px; top:3px;
+    width:20px; height:20px; border-radius:50%;
+    background: var(--surface);
+    box-shadow: 2px 2px 5px var(--shadow-dark), -1px -1px 3px var(--shadow-light);
+    transition: transform .2s cubic-bezier(.4,0,.2,1);
+  }
+  .hw-switch[aria-checked="true"] { background: rgba(107,142,92,0.25); }
+  .hw-switch[aria-checked="true"]::after { transform: translateX(22px); }
+  .hw-led { width:8px; height:8px; border-radius:50%; background: var(--border-strong); box-shadow: inset 0 0 2px rgba(0,0,0,0.3); transition: all .2s; flex-shrink:0; }
+  .hw-led.on { background: #7FB069; box-shadow: 0 0 7px rgba(127,176,105,0.9), inset 0 0 2px rgba(255,255,255,0.5); }
+  .hw-switch:focus-visible { outline: 2px solid var(--accent-glow); outline-offset: 2px; }
+  .tool-card {
+    display:flex; align-items:center; gap:14px; padding:15px 18px; margin-bottom:10px;
+    background: var(--surface-solid); border-radius:14px;
+    box-shadow: 4px 4px 11px var(--shadow-dark-subtle), -3px -3px 8px var(--shadow-light);
+  }
+  .tool-card .meta { flex:1; min-width:0; }
+  .tool-card .meta .t { font-weight:600; font-size:13px; color: var(--text); }
+  .tool-card .meta .d { font-size:12px; color:var(--text-dim); line-height:1.6; margin-top:2px; }
+
+  /* ============ 危险区：内凹警示凹槽 + 安全保护盖质感 ============ */
+  #sec-danger {
+    background: linear-gradient(180deg, rgba(190,90,65,0.05), var(--surface)) !important;
+    box-shadow: 8px 8px 22px var(--shadow-dark-subtle), -7px -7px 16px var(--shadow-light),
+                inset 0 0 0 2px rgba(190,90,65,0.30) !important;
+  }
+  #sec-danger h3 { color: var(--negative) !important; }
+  .btn-danger {
+    border: none !important;
+    border-radius: 12px !important;
+    background: var(--surface-solid) !important;
+    color: var(--negative) !important;
+    box-shadow: 4px 4px 10px var(--shadow-dark-subtle), -3px -3px 8px var(--shadow-light), inset 0 0 0 1.5px rgba(190,90,65,0.5) !important;
+    transition: all .14s ease;
+  }
+  .btn-danger:hover { background: var(--negative) !important; color: #fffdf5 !important; transform: translateY(-1px); }
+  .btn-danger:active { transform: translateY(1px); box-shadow: inset 4px 4px 9px rgba(120,40,25,0.35) !important; }
+
+  /* 危险长按确认遮罩 */
+  #danger-modal-overlay {
+    position: fixed; inset: 0; z-index: 10000;
+    background: rgba(40,34,28,0.55); backdrop-filter: blur(3px);
+    display: none; align-items: center; justify-content: center;
+  }
+  #danger-modal-overlay.open { display: flex; }
+  .danger-modal {
+    background: var(--surface);
+    border-radius: 22px;
+    padding: 30px 30px 26px;
+    max-width: 420px; width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.6), inset 0 0 0 2px rgba(190,90,65,0.35);
+    text-align: center;
+  }
+  .danger-modal h3 { font-family:'Share Tech Mono',monospace; color: var(--negative); letter-spacing: 1px; margin-bottom: 12px; }
+  .danger-modal p { font-size: 13px; color: var(--text-dim); line-height: 1.8; margin-bottom: 22px; }
+  .danger-hold-btn {
+    position: relative; width: 100%; padding: 15px;
+    border: none; border-radius: 14px; cursor: pointer;
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    color: var(--negative); background: var(--surface-solid);
+    border-radius: 14px !important;
+    box-shadow: 4px 4px 11px var(--shadow-dark-subtle), -3px -3px 8px var(--shadow-light), inset 0 0 0 1.5px rgba(190,90,65,0.5) !important;
+    overflow: hidden; user-select: none;
+    transition: color .2s;
+  }
+  .danger-hold-btn .fill {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 0%;
+    background: var(--negative); z-index: 0; transition: width .05s linear;
+  }
+  .danger-hold-btn .lbl { position: relative; z-index: 1; }
+  .danger-hold-btn.armed { color: #fffdf5; }
+  .danger-cancel { margin-top: 14px; background: none !important; box-shadow: none !important; color: var(--text-dim); font-size: 13px; }
+
+  /* —— 细节统一：分隔线/折叠/进度条 —— */
+  hr { border: none !important; height: 1px; background: var(--border) !important; }
+  details > summary { font-family:'Share Tech Mono',monospace; }
+  pre, code { font-family:'Share Tech Mono','SF Mono',Consolas,monospace !important; }
+
+  /* ============================================================
+     小巧思 · MICRO-INTERACTIONS（呼吸 / 消散 / 展开 / 钉光 / 引力 / 孵蛋）
+     ============================================================ */
+
+  /* —— ① 衰减引擎运行 → heartbeat 点轻微呼吸（呼应 breath） —— */
+  @keyframes ob-breathe {
+    0%, 100% { transform: scale(0.82); opacity: 0.55; box-shadow: 0 0 0 0 rgba(58,155,92,0.0); }
+    50%      { transform: scale(1.15); opacity: 1;    box-shadow: 0 0 8px 2px rgba(58,155,92,0.45); }
+  }
+  #heartbeat-dot.breathing { animation: ob-breathe 4.2s ease-in-out infinite; }
+
+  /* —— ② pinned 桶 hover：图标被「钉住」般亮起光晕 —— */
+  .bucket-row .pin-ic svg { transition: color .25s ease, filter .25s ease, transform .25s ease; }
+  .bucket-row:hover .pin-ic svg {
+    color: var(--accent);
+    filter: drop-shadow(0 0 5px var(--accent-glow)) drop-shadow(0 0 2px var(--accent));
+    transform: rotate(-10deg) scale(1.18);
+  }
+
+  /* —— ③ 删除/放下：记忆桶轻轻「消散」而非直接消失 —— */
+  @keyframes ob-dissolve {
+    0%   { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
+    100% { opacity: 0; transform: translateX(14px) scale(0.97); filter: blur(3px); }
+  }
+  .bucket-row.dissolving { animation: ob-dissolve .6s cubic-bezier(.4,0,.6,1) forwards; pointer-events: none; }
+
+  /* —— ④ 久未浮现：稀疏虚线边框，传达「模糊、遥远」 —— */
+  .bucket-row.faded {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: 1.5px dashed var(--border-strong) !important;
+    opacity: 0.66;
+  }
+  .bucket-row.faded:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: 4px 4px 11px var(--shadow-dark-subtle), -3px -3px 8px var(--shadow-light) !important; }
+
+  /* —— ⑤ feel 表情：hover 时轻轻点头 —— */
+  @keyframes ob-bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2.5px)} }
+  .bucket-row:hover .feel-face { animation: ob-bob .7s ease-in-out; }
+
+  /* —— ⑥ letter 桶详情：像翻开信纸一样展开 —— */
+  @keyframes ob-unfold {
+    0%   { transform: scaleY(0.55); opacity: 0; }
+    60%  { transform: scaleY(1.02); opacity: 1; }
+    100% { transform: scaleY(1); opacity: 1; }
+  }
+  .detail-panel.letter-mode .detail-content { transform-origin: top center; animation: ob-unfold .5s cubic-bezier(.2,.7,.3,1) both; }
+  .detail-panel.letter-mode h2::before { content:'✉ '; color: var(--accent); }
+
+  /* —— ⑦ anchor 桶详情：周围浮出引力线，暗示「这是坐标系」 —— */
+  .detail-panel.anchor-mode::before {
+    content:''; position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: 0.5;
+    background:
+      repeating-radial-gradient(circle at 50% 38%, transparent 0 26px, rgba(194,152,47,0.10) 26px 27px, transparent 27px 54px);
+    -webkit-mask-image: radial-gradient(circle at 50% 38%, #000 0%, transparent 72%);
+            mask-image: radial-gradient(circle at 50% 38%, #000 0%, transparent 72%);
+  }
+  .detail-panel.anchor-mode > * { position: relative; z-index: 1; }
+
+  /* —— ⑧ anchor 计数器满额（24/24）→ 锚图标变沉，像压舱物很重 —— */
+  #anchor-counter.full i { color: var(--negative) !important; opacity: 0.95; filter: drop-shadow(0 1px 1px rgba(120,40,25,0.4)); }
+  #anchor-counter.full #anchor-counter-text { color: var(--negative); font-weight: 600; }
+
+  /* —— ⑨ 像素小黄鸡蛋：固定在右下角，随记忆数量孵化长大 —— */
+  #ob-chick {
+    position: fixed; right: 18px; bottom: 16px; z-index: 60;
+    width: 46px; height: 46px; cursor: pointer;
+    filter: drop-shadow(2px 3px 4px var(--shadow-dark));
+    transition: transform .25s cubic-bezier(.3,1.4,.5,1);
+    image-rendering: pixelated;
+  }
+  #ob-chick:hover { transform: translateY(-3px) scale(1.08); }
+  #ob-chick svg { display:block; width:100%; height:100%; shape-rendering: crispEdges; }
+  @keyframes ob-chick-wiggle { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-9deg)} 75%{transform:rotate(9deg)} }
+  #ob-chick.wiggle svg { animation: ob-chick-wiggle .5s ease-in-out; transform-origin: 50% 80%; }
+  #ob-chick .chick-tip {
+    position:absolute; right:0; bottom:52px; white-space:nowrap;
+    background: var(--surface); color: var(--text);
+    font-family:'Share Tech Mono',monospace; font-size:10px; padding:5px 9px; border-radius:9px;
+    box-shadow: 3px 3px 10px var(--shadow-dark), -2px -2px 6px var(--shadow-light);
+    opacity:0; transform: translateY(4px); transition: opacity .2s, transform .2s; pointer-events:none;
+  }
+  #ob-chick:hover .chick-tip { opacity:1; transform: translateY(0); }
+  @media (max-width: 768px) { #ob-chick { width: 38px; height: 38px; right: 12px; bottom: 12px; } }
 </style>
 </head>
 <body>
@@ -684,9 +1091,10 @@
   <div class="tab active" data-tab="list"><span>记忆桶</span><span class="tab-en">Buckets</span></div>
   <div class="tab" data-tab="breath"><span>Breath 模拟</span><span class="tab-en">Breath Trace</span></div>
   <div class="tab" data-tab="network"><span>记忆网络</span><span class="tab-en">Network</span></div>
+  <div class="tab" data-tab="tools"><span>工具箱</span><span class="tab-en">Toolbox</span></div>
   <div class="tab" data-tab="plan"><span>计划</span><span class="tab-en">Plans</span></div>
   <div class="tab" data-tab="letters"><span>信</span><span class="tab-en">Letters</span></div>
-  <div class="tab" data-tab="anchors"><span>Anchor</span><span class="tab-en">Anchors</span></div>
+  <div class="tab" data-tab="anchors"><span>锚点</span><span class="tab-en">Anchors</span></div>
   <div class="tab" data-tab="import"><span>导入</span><span class="tab-en">Import</span></div>
   <div class="tab" data-tab="logs"><span>日志</span><span class="tab-en">Logs</span></div>
   <div class="tab" data-tab="settings"><span>设置</span><span class="tab-en">Settings</span></div>
@@ -769,6 +1177,54 @@
     </label>
   </div>
   <canvas id="network-canvas"></canvas>
+  <div id="network-terminal">SYSTEM READY · 等待载入记忆网络…</div>
+</div>
+
+<!-- 工具箱 / Toolbox：真实开关做成硬件拨片 + LED -->
+<div class="content" id="tools-view" style="display:none">
+  <div style="max-width:680px;margin:0 auto;">
+    <div class="config-section">
+      <h3>工具箱 / Toolbox</h3>
+      <p style="font-size:12px;color:var(--text-dim);line-height:1.7;margin-bottom:18px;">
+        每个工具一个硬件拨片开关；右侧 LED 亮绿 = 已开启。拨动立即生效，看不懂的底层参数都收在下方折叠层里。
+      </p>
+
+      <!-- 加权采样（/api/settings/sampling） -->
+      <div class="tool-card">
+        <span class="hw-led" id="led-sampling"></span>
+        <div class="meta">
+          <div class="t">记忆加权采样 <span style="font-family:'Share Tech Mono',monospace;color:var(--text-light);font-weight:400;">/ Breath Sampling</span></div>
+          <div class="d">开：中等分数的记忆也有机会浮现，不总是返回最高分。关：永远只返回得分最高的那条。</div>
+        </div>
+        <span class="hw-switch" id="sw-sampling" role="switch" aria-checked="false" tabindex="0" onclick="toolToggleSampling()"></span>
+      </div>
+
+      <!-- 外网访问 Cloudflare Tunnel（/api/tunnel/*） -->
+      <div class="tool-card">
+        <span class="hw-led" id="led-tunnel"></span>
+        <div class="meta">
+          <div class="t">外网访问 <span style="font-family:'Share Tech Mono',monospace;color:var(--text-light);font-weight:400;">/ Cloudflare Tunnel</span></div>
+          <div class="d">开：可以从外网访问这个面板。关：仅本机 / 局域网。需先在「设置 → ⑥」保存 Token。</div>
+        </div>
+        <span class="hw-switch" id="sw-tunnel" role="switch" aria-checked="false" tabindex="0" onclick="toolToggleTunnel()"></span>
+      </div>
+
+      <div id="tools-msg" style="font-size:12px;min-height:18px;margin:4px 2px 14px;color:var(--text-dim);"></div>
+
+      <!-- 主功能键（momentary） -->
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+        <button class="btn-primary" onclick="toolTestBreath()">试一次 breath</button>
+        <button onclick="toolGithubSync()">立即备份到 GitHub ↑</button>
+        <button onclick="loadToolsPanel()">刷新状态</button>
+      </div>
+      <div id="tools-action-result" style="margin-top:12px;font-size:12px;color:var(--text-dim);line-height:1.8;"></div>
+
+      <details style="margin-top:18px;">
+        <summary style="cursor:pointer;font-size:12px;color:var(--text-dim);">底层参数 / 原始数据 ▸</summary>
+        <pre id="tools-raw" style="margin-top:10px;padding:14px;font-size:11px;line-height:1.6;background:var(--surface-solid);border-radius:10px;box-shadow:inset 3px 3px 7px var(--shadow-dark-subtle), inset -3px -3px 6px var(--shadow-light);white-space:pre-wrap;word-break:break-all;">—</pre>
+      </details>
+    </div>
+  </div>
 </div>
 
 <div class="content" id="import-view" style="display:none">
@@ -937,8 +1393,8 @@
         <label>筛选</label>
         <select id="letter-filter" onchange="loadLetters()" style="flex:0 0 200px;">
           <option value="">全部</option>
-          <option value="user">仅 user</option>
-          <option value="claude">仅 claude</option>
+          <option value="user">仅 YOU</option>
+          <option value="claude">仅 AI</option>
         </select>
         <button class="btn-secondary" onclick="loadLetters()" style="padding:8px 18px;font-size:12px;">刷新</button>
         <span id="letter-count" style="font-size:11px;color:var(--text-dim);margin-left:auto;"></span>
@@ -957,7 +1413,7 @@
       <h3><i data-lucide="anchor" style="width:16px;height:16px;vertical-align:-2px;"></i> Anchor — 坐标系</h3>
       <p style="font-size:12px;color:var(--text-dim);line-height:1.7;margin:4px 0 12px;">
         anchor 是「定义我们是谁」的事实。它们<b>不会</b>主动出现在默认 breath 里——只在 query / domain / emotion 命中时浮现。<br>
-        硬上限 <b>24</b>。满了之后，要 anchor 新的就必须先 release 一条旧的。痛是结构在工作。
+        硬上限 <b>24</b>。满了之后，要 anchor 新的就必须先 release 一条旧的。
       </p>
       <div style="font-size:13px;margin-bottom:10px;">当前：<span id="anchors-count-text">…</span></div>
       <div id="anchors-list" style="display:flex;flex-direction:column;gap:10px;">
@@ -974,7 +1430,7 @@
     <!-- 顶部引导 + 6 锚点 -->
     <div class="config-section" style="background:rgba(0,0,0,0.025);">
       <div style="font-size:13px;color:var(--text-dim);line-height:1.7;">
-        所有项都直接显示当前生效的值，可以原地改。每一组下方的「保存」按钮会立刻写入 .env / config.yaml / 各设置接口。
+        所有项都直接显示当前生效的值，可以在此处改。每一组下方的「保存」按钮会立刻写入 .env / config.yaml / 各设置接口。
       </div>
       <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;font-size:12px;">
         <a href="#sec-me" style="padding:4px 10px;border:1px solid var(--border,#ddd);border-radius:14px;text-decoration:none;color:var(--text);">① 我</a>
@@ -983,7 +1439,8 @@
         <a href="#sec-bucket" style="padding:4px 10px;border:1px solid var(--border,#ddd);border-radius:14px;text-decoration:none;color:var(--text);">④ 桶行为</a>
         <a href="#sec-env" style="padding:4px 10px;border:1px solid var(--border,#ddd);border-radius:14px;text-decoration:none;color:var(--text);">⑤ 环境变量</a>
         <a href="#sec-mcp" style="padding:4px 10px;border:1px solid var(--border,#ddd);border-radius:14px;text-decoration:none;color:var(--text);">⑥ MCP 配置</a>
-        <a href="#sec-danger" style="padding:4px 10px;border:1px solid rgba(184,92,60,0.5);border-radius:14px;text-decoration:none;color:var(--accent);">⑦ 危险区</a>
+        <a href="#sec-github" style="padding:4px 10px;border:1px solid var(--border,#ddd);border-radius:14px;text-decoration:none;color:var(--text);">⑦ GitHub 同步</a>
+        <a href="#sec-danger" style="padding:4px 10px;border:1px solid rgba(184,92,60,0.5);border-radius:14px;text-decoration:none;color:var(--accent);">⑧ 危险区</a>
       </div>
     </div>
 
@@ -1113,8 +1570,21 @@
         <div id="dehy-key-notice" style="display:none;font-size:12px;color:var(--warning);margin-bottom:10px;padding:7px 10px;background:rgba(184,153,98,0.08);border-radius:4px;line-height:1.6;">
           ⚠ 压缩 API Key 未配置，桶内容将无法被自动脱水压缩，记忆系统无法正常运行。请在下方输入框填入 Key 并点击「保存 Key」。
         </div>
-        <div class="config-row"><label>Model</label><input type="text" id="cfg-dehy-model" placeholder="gemini-2.5-flash-lite" /></div>
-        <div class="config-row"><label>Base URL</label><input type="text" id="cfg-dehy-url" placeholder="https://..." /></div>
+        <div class="config-row">
+          <label>格式</label>
+          <select id="cfg-dehy-format" onchange="onDehyFormatChange()">
+            <option value="openai_compat">OpenAI 兼容（DeepSeek / Ollama / vLLM 等）</option>
+            <option value="gemini">Gemini 原生</option>
+            <option value="anthropic">Anthropic 原生</option>
+          </select>
+        </div>
+        <div class="config-row" style="align-items:center;">
+          <label>Model</label>
+          <input type="text" id="cfg-dehy-model" placeholder="gemini-2.5-flash-lite" style="flex:1;" />
+          <button type="button" onclick="fetchModels('dehy')" style="margin-left:6px;padding:6px 10px;font-size:11px;white-space:nowrap;">获取模型 ↓</button>
+        </div>
+        <div id="cfg-dehy-model-list" style="display:none;margin:-8px 0 8px 122px;max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--surface);"></div>
+        <div class="config-row" id="cfg-dehy-url-row"><label>Base URL</label><input type="text" id="cfg-dehy-url" placeholder="https://..." /></div>
         <div class="config-row" style="align-items:center;">
           <label>API Key</label>
           <input type="password" id="cfg-dehy-key" placeholder="当前: 加载中…" style="flex:1;" />
@@ -1144,10 +1614,18 @@
           <span id="emb-key-msg" style="margin-left:8px;font-size:11px;"></span>
         </div>
         <div class="config-row">
+          <label>格式</label>
+          <select id="cfg-emb-format" onchange="onEmbFormatChange()">
+            <option value="openai_compat">OpenAI 兼容（Gemini / 自定义 URL）</option>
+            <option value="gemini">Gemini 原生</option>
+            <option value="ollama">本地 Ollama（bge-m3，无需 key）</option>
+          </select>
+        </div>
+        <div id="cfg-emb-url-row" class="config-row">
           <label>Base URL</label>
           <input type="text" id="cfg-emb-base-url" placeholder="https://generativelanguage.googleapis.com/v1beta/openai/" />
         </div>
-        <div style="margin-top:-4px;margin-bottom:12px;padding-left:122px;font-size:11px;color:var(--text-light);">Key 保存后立即生效并写入 .env（重启持久）。Base URL 留空使用 Gemini 默认。</div>
+        <div id="cfg-emb-url-hint" style="margin-top:-4px;margin-bottom:12px;padding-left:122px;font-size:11px;color:var(--text-light);">Key 保存后立即生效并写入 .env（重启持久）。Base URL 留空使用 Gemini 默认。</div>
         <div class="config-row">
           <label>启用</label>
           <select id="cfg-emb-enabled"><option value="true">开启</option><option value="false">关闭</option></select>
@@ -1159,16 +1637,54 @@
           </select>
         </div>
         <div id="cfg-emb-backend-note" style="margin-top:-4px;padding-left:122px;font-size:11px;color:var(--text-light);line-height:1.6;"></div>
-        <div class="config-row">
+        <div class="config-row" style="align-items:center;">
           <label>Model</label>
-          <input type="text" id="cfg-emb-model" placeholder="gemini-embedding-001" />
+          <input type="text" id="cfg-emb-model" placeholder="gemini-embedding-001" style="flex:1;" />
+          <button type="button" onclick="fetchModels('emb')" style="margin-left:6px;padding:6px 10px;font-size:11px;white-space:nowrap;">获取模型 ↓</button>
         </div>
+        <div id="cfg-emb-model-list" style="display:none;margin:-8px 0 8px 122px;max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--surface);"></div>
         <div style="margin-top:10px;padding:10px 12px;border:1px dashed var(--border,#ddd);border-radius:6px;">
           <div style="font-size:12px;color:var(--text-light);margin-bottom:6px;">
             切换后端不会自动重算已有向量。若要让旧向量与新后端对齐，请显式触发迁移。
           </div>
           <button id="emb-migrate-btn" type="button" style="padding:6px 12px;">切换 / 重算所有 embedding…</button>
           <div id="emb-migrate-status" style="margin-top:8px;font-size:12px;line-height:1.6;color:var(--text);"></div>
+        </div>
+
+        <!-- 本地向量模型 (Ollama / bge-m3) -->
+        <div style="margin-top:14px;padding:12px;border:1px solid var(--border,#ddd);border-radius:8px;background:var(--bg-soft,#f7f6f2);">
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px;">🖥️ 本地向量模型 <span style="font-weight:400;color:var(--text-light);font-size:11px;">/ Ollama · bge-m3（离线、无需 key、不出网）</span></div>
+          <div style="font-size:11px;color:var(--text-light);line-height:1.6;margin-bottom:8px;">
+            💾 需约 <b>2–3GB 空闲内存</b>（模型常驻）+ 1.2GB 磁盘；纯 CPU 即可，首条查询约 1–9s（冷启动），之后 &lt;0.5s。低配机器（&lt;2GB 空闲内存）建议继续用云端 Gemini。
+          </div>
+          <div id="local-emb-status" style="font-size:12px;line-height:1.7;color:var(--text);margin-bottom:8px;">读取中…</div>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+            <button type="button" class="btn-primary" onclick="oneClickLocal()" style="padding:7px 14px;">🚀 一键搭建本地向量化（下载 + 切换）</button>
+            <button type="button" onclick="switchEmbedding('gemini')" style="padding:7px 12px;">切回云端 Gemini</button>
+            <button type="button" onclick="loadLocalEmbStatus()" style="padding:7px 12px;">刷新状态</button>
+          </div>
+
+          <details style="margin-bottom:6px;">
+            <summary style="cursor:pointer;font-size:12px;color:var(--text-light);">分步操作 / 高级（下载镜像、单独下载或切换）</summary>
+            <div style="padding-top:8px;">
+              <div class="config-row" style="align-items:center;">
+                <label style="min-width:auto;">下载镜像</label>
+                <select id="local-emb-mirror" style="width:auto;">
+                  <option value="official">官方源（默认）</option>
+                  <option value="modelscope">ModelScope（国内，需匹配模型名）</option>
+                </select>
+                <input type="text" id="local-emb-mirror-custom" placeholder="或自定义 registry 前缀，如 myhub.com/lib/" style="flex:1;margin-left:8px;" />
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                <button type="button" onclick="pullLocalModel()" style="padding:6px 12px;">① 仅下载 bge-m3</button>
+                <button type="button" onclick="switchEmbedding('ollama')" style="padding:6px 12px;">② 仅切换到本地并重算 →</button>
+              </div>
+            </div>
+          </details>
+
+          <div id="local-emb-pull-status" style="margin-top:8px;font-size:12px;line-height:1.6;color:var(--text);"></div>
+          <div id="local-emb-hint" style="margin-top:8px;font-size:11px;color:var(--text-light);line-height:1.6;"></div>
         </div>
       </div>
 
@@ -1229,7 +1745,20 @@
         <div style="font-size:13px;font-weight:600;margin-bottom:8px;">压缩 LLM（脱水 / 打标 / 合并）</div>
         <div class="form-row"><label>API Key</label><input type="password" id="env-compress-key" placeholder="留空 = 不修改" autocomplete="new-password" style="font-family:monospace;" /></div>
         <div class="form-row"><label>Base URL</label><input type="text" id="env-compress-base" placeholder="例：https://api.deepseek.com/v1" style="font-family:monospace;" /></div>
-        <div class="form-row"><label>Model</label><input type="text" id="env-compress-model" placeholder="例：deepseek-chat" style="font-family:monospace;" /></div>
+        <div class="form-row" style="align-items:center;">
+          <label>Model</label>
+          <input type="text" id="env-compress-model" placeholder="例：deepseek-chat" style="font-family:monospace;flex:1;" />
+          <button type="button" onclick="fetchModels('env-compress')" style="margin-left:6px;padding:5px 9px;font-size:11px;white-space:nowrap;">获取模型 ↓</button>
+        </div>
+        <div id="env-compress-model-list" style="display:none;margin:-8px 0 8px 108px;max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--surface);"></div>
+        <div class="form-row">
+          <label>格式</label>
+          <select id="env-compress-format">
+            <option value="openai_compat">OpenAI 兼容</option>
+            <option value="gemini">Gemini 原生</option>
+            <option value="anthropic">Anthropic 原生</option>
+          </select>
+        </div>
       </div>
 
       <div style="margin-bottom:18px;">
@@ -1342,9 +1871,69 @@
       </details>
     </div>
 
-    <!-- ⑦ 危险区 -->
+    <!-- ⑦ GitHub 同步 -->
+    <div class="config-section" id="sec-github">
+      <h3>⑦ GitHub 同步</h3>
+      <p style="font-size:12px;color:var(--text-light);margin:0 0 16px;line-height:1.6;">
+        将所有 bucket <code>.md</code> 文件备份到 GitHub 仓库，防止 VPS 实例丢失数据。<br>
+        每次同步创建一个 commit；embeddings.db 不上传（可用「重算所有向量」恢复）。
+      </p>
+
+      <div class="config-row">
+        <label>GitHub Token</label>
+        <input type="password" id="gh-token" placeholder="ghp_xxxx…（Fine-grained 或 Classic，需 repo 权限）" style="flex:1;" />
+      </div>
+      <div style="margin-top:-6px;margin-bottom:12px;padding-left:122px;font-size:11px;color:var(--text-light);">
+        Token 仅写入 .env，不进 config.yaml。推荐创建 Fine-grained token，只给目标仓库 Contents 读写权限。
+      </div>
+
+      <div class="config-row">
+        <label>仓库</label>
+        <input type="text" id="gh-repo" placeholder="owner/repo-name" style="flex:1;" />
+      </div>
+      <div class="config-row">
+        <label>分支</label>
+        <input type="text" id="gh-branch" placeholder="main" style="flex:1;" />
+      </div>
+      <div class="config-row">
+        <label>路径前缀</label>
+        <input type="text" id="gh-prefix" placeholder="ombre（留空则上传到仓库根目录）" style="flex:1;" />
+      </div>
+      <div class="config-row">
+        <label>自动同步</label>
+        <select id="gh-interval" style="flex:1;">
+          <option value="0">关闭</option>
+          <option value="30">每 30 分钟</option>
+          <option value="60">每 1 小时</option>
+          <option value="360">每 6 小时</option>
+          <option value="720">每 12 小时</option>
+          <option value="1440">每 24 小时</option>
+        </select>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+        <button type="button" onclick="saveGithubConfig()" style="padding:7px 18px;font-size:13px;">保存配置</button>
+        <button type="button" onclick="validateGithub()" style="padding:7px 18px;font-size:13px;background:var(--surface);border:1px solid var(--border);color:var(--text);">验证连接</button>
+        <button type="button" onclick="runGithubSync()" id="gh-sync-btn" style="padding:7px 18px;font-size:13px;background:#2d7d46;color:#fff;border:none;border-radius:6px;cursor:pointer;">立即同步 ↑</button>
+      </div>
+
+      <div id="gh-msg" style="margin-top:12px;font-size:12px;min-height:18px;"></div>
+
+      <div id="gh-status-box" style="margin-top:14px;padding:10px 14px;border:1px solid var(--border);border-radius:6px;font-size:12px;display:none;">
+        <div style="font-weight:600;margin-bottom:6px;">同步状态</div>
+        <div>仓库：<span id="gh-st-repo">—</span></div>
+        <div>分支：<span id="gh-st-branch">—</span></div>
+        <div>路径：<span id="gh-st-prefix">—</span></div>
+        <div>自动同步：<span id="gh-st-interval">—</span></div>
+        <div>最后同步：<span id="gh-st-time">—</span></div>
+        <div>状态：<span id="gh-st-status">—</span></div>
+        <div id="gh-st-error-row" style="display:none;color:var(--accent);">错误：<span id="gh-st-error"></span></div>
+      </div>
+    </div>
+
+    <!-- ⑧ 危险区 -->
     <div class="config-section" id="sec-danger" style="border:1px solid rgba(184,92,60,0.55);background:rgba(184,92,60,0.04);margin-top:40px;">
-      <h3 style="color:var(--accent);">⑦ 危险区</h3>
+      <h3 style="color:var(--accent);">⑧ 危险区</h3>
 
       <div style="margin-bottom:18px;">
         <div style="font-weight:600;font-size:13px;margin-bottom:6px;">数据导出 / 健康</div>
@@ -1723,6 +2312,95 @@ async function toggleTunnel() {
   }
 }
 
+function onDehyFormatChange() {
+  var fmt = (document.getElementById('cfg-dehy-format') || {value:'openai_compat'}).value;
+  var urlRow = document.getElementById('cfg-dehy-url-row');
+  if (urlRow) urlRow.style.display = fmt === 'gemini' ? 'none' : '';
+}
+
+function onEmbFormatChange() {
+  var fmt = (document.getElementById('cfg-emb-format') || {value:'openai_compat'}).value;
+  var urlRow = document.getElementById('cfg-emb-url-row');
+  var urlHint = document.getElementById('cfg-emb-url-hint');
+  var isGemini = fmt === 'gemini';
+  if (urlRow) urlRow.style.display = isGemini ? 'none' : '';
+  if (urlHint) urlHint.style.display = isGemini ? 'none' : '';
+}
+
+async function fetchModels(section) {
+  // section: 'dehy' | 'env-compress' | 'emb'
+  var apiKey, baseUrl, apiFormat, modelInputId, listId, keyIsAlreadySaved;
+
+  if (section === 'dehy') {
+    apiKey = (document.getElementById('cfg-dehy-key') || {value:''}).value.trim();
+    baseUrl = (document.getElementById('cfg-dehy-url') || {value:''}).value.trim();
+    apiFormat = (document.getElementById('cfg-dehy-format') || {value:'openai_compat'}).value;
+    modelInputId = 'cfg-dehy-model';
+    listId = 'cfg-dehy-model-list';
+    // Key is saved if placeholder shows a masked value (set by refreshEnvConfig)
+    var ph = (document.getElementById('cfg-dehy-key') || {placeholder:''}).placeholder;
+    keyIsAlreadySaved = ph && ph.indexOf('当前:') !== -1;
+  } else if (section === 'emb') {
+    apiKey = (document.getElementById('cfg-emb-api-key') || {value:''}).value.trim();
+    baseUrl = (document.getElementById('cfg-emb-base-url') || {value:''}).value.trim();
+    // gemini native → use gemini_embed (filters embedContent models); openai_compat → use openai_compat
+    var embFmt = (document.getElementById('cfg-emb-format') || {value:'openai_compat'}).value;
+    apiFormat = embFmt === 'gemini' ? 'gemini_embed' : 'openai_compat';
+    modelInputId = 'cfg-emb-model';
+    listId = 'cfg-emb-model-list';
+    var ph2 = (document.getElementById('cfg-emb-api-key') || {placeholder:''}).placeholder;
+    keyIsAlreadySaved = ph2 && ph2.indexOf('当前:') !== -1;
+  } else {
+    apiKey = (document.getElementById('env-compress-key') || {value:''}).value.trim();
+    baseUrl = (document.getElementById('env-compress-base') || {value:''}).value.trim();
+    apiFormat = (document.getElementById('env-compress-format') || {value:'openai_compat'}).value;
+    modelInputId = 'env-compress-model';
+    listId = 'env-compress-model-list';
+    var ph3 = (document.getElementById('env-compress-key') || {placeholder:''}).placeholder;
+    keyIsAlreadySaved = ph3 && ph3.indexOf('当前：') !== -1;
+  }
+
+  var listEl = document.getElementById(listId);
+  if (!listEl) return;
+
+  // Key validation: must have a key typed OR a key already saved on server
+  if (!apiKey && !keyIsAlreadySaved) {
+    listEl.style.display = 'block';
+    listEl.innerHTML = '<div style="padding:8px 12px;color:var(--warning);">⚠ 请先输入并保存 API Key，再获取模型列表</div>';
+    return;
+  }
+
+  // Use sentinel to let backend read current server-side key (when no key typed but one is saved)
+  var effectiveKey = apiKey || (section === 'emb' ? '__use_current_embed__' : '__use_current__');
+
+  listEl.style.display = 'block';
+  listEl.innerHTML = '<div style="padding:6px 10px;color:var(--text-dim);">获取中…</div>';
+  try {
+    var payload = { api_key: effectiveKey, base_url: baseUrl, api_format: apiFormat };
+    var r = await authFetch('/api/models', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!r) { listEl.style.display = 'none'; return; }
+    var d = await readJsonSafe(r);
+    if (!d.ok || !d.models || !d.models.length) {
+      listEl.innerHTML = '<div style="padding:8px 12px;color:var(--negative);">✗ ' + (d.error || '无可用模型') + '</div>';
+      return;
+    }
+    listEl.innerHTML = d.models.map(function(m) {
+      var safe = m.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return '<div style="padding:5px 10px;cursor:pointer;border-bottom:1px solid var(--border);" ' +
+        'onmouseenter="this.style.background=\'var(--accent-glow)\'" ' +
+        'onmouseleave="this.style.background=\'\'" ' +
+        'onclick="document.getElementById(\'' + modelInputId + '\').value=\'' + safe + '\';document.getElementById(\'' + listId + '\').style.display=\'none\';">' +
+        m + '</div>';
+    }).join('');
+  } catch (e) {
+    listEl.innerHTML = '<div style="padding:8px 12px;color:var(--negative);">✗ ' + e.message + '</div>';
+  }
+}
+
 async function testDehydrationKey() {
   const msgEl = document.getElementById('dehy-key-msg');
   msgEl.style.color = 'var(--text-dim)'; msgEl.textContent = '测试中…';
@@ -1819,7 +2497,7 @@ async function loadSamplingSettings() {
   try {
     const resp = await authFetch('/api/settings/sampling');
     if (!resp) return;
-    const d = await resp.json();
+    const d = await readJsonSafe(resp);
     document.getElementById('sampling-enabled').checked = !!d.enabled;
     document.getElementById('sampling-topk').value = d.top_k;
     document.getElementById('sampling-samplek').value = d.sample_k;
@@ -1848,7 +2526,7 @@ async function saveSamplingSettings() {
       body: JSON.stringify(body),
     });
     if (!resp) return;
-    const d = await resp.json();
+    const d = await readJsonSafe(resp);
     if (resp.ok) {
       msg.style.color = 'var(--accent)';
       msg.textContent = '已保存（仅热更新到内存）';
@@ -1882,6 +2560,122 @@ async function testSamplingBreath() {
   } catch(e) {
     out.textContent = '失败: ' + e;
   }
+}
+
+// ============================================================
+// 工具箱 / Toolbox — 仅接「自包含、不会误伤其它配置」的真实开关
+//   · 加权采样  → /api/settings/sampling (GET/POST)
+//   · 外网访问  → /api/tunnel/{status,start,stop}
+// 动作键：试一次 breath → /api/breath；备份 → /api/github/sync
+// ============================================================
+function _setSwitch(swId, ledId, on) {
+  var sw = document.getElementById(swId), led = document.getElementById(ledId);
+  if (sw) sw.setAttribute('aria-checked', on ? 'true' : 'false');
+  if (led) led.classList.toggle('on', !!on);
+}
+function _toolsMsg(text, kind) {
+  var el = document.getElementById('tools-msg'); if (!el) return;
+  el.style.color = kind === 'err' ? 'var(--negative)' : (kind === 'ok' ? 'var(--accent)' : 'var(--text-dim)');
+  el.textContent = text || '';
+}
+
+var _toolsSampling = null;  // 缓存采样完整参数，翻转 enabled 时原样回传，避免丢字段
+async function loadToolsPanel() {
+  _toolsMsg('读取状态…');
+  var raw = {};
+  try {
+    var r1 = await authFetch('/api/settings/sampling');
+    if (r1 && r1.ok) {
+      var s = await r1.json();
+      _toolsSampling = s;
+      _setSwitch('sw-sampling', 'led-sampling', !!s.enabled);
+      raw.sampling = s;
+    }
+  } catch (e) {}
+  try {
+    var r2 = await authFetch('/api/tunnel/status');
+    if (r2 && r2.ok) {
+      var t = await r2.json();
+      _setSwitch('sw-tunnel', 'led-tunnel', !!t.running);
+      raw.tunnel = { running: t.running, token_set: t.token_set, auto_start: t.auto_start, last_error: t.last_error || '' };
+    }
+  } catch (e) {}
+  var pre = document.getElementById('tools-raw');
+  if (pre) pre.textContent = JSON.stringify(raw, null, 2);
+  _toolsMsg('');
+}
+
+async function toolToggleSampling() {
+  var sw = document.getElementById('sw-sampling');
+  var willOn = sw.getAttribute('aria-checked') !== 'true';
+  var base = _toolsSampling || { top_k: 12, sample_k: 3, temperature: 0.7 };
+  _toolsMsg('保存中…');
+  try {
+    var resp = await authFetch('/api/settings/sampling', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: willOn, top_k: base.top_k, sample_k: base.sample_k, temperature: base.temperature })
+    });
+    if (resp && resp.ok) {
+      _setSwitch('sw-sampling', 'led-sampling', willOn);
+      if (_toolsSampling) _toolsSampling.enabled = willOn;
+      var cb = document.getElementById('sampling-enabled'); if (cb) cb.checked = willOn;  // 同步设置页
+      _toolsMsg(willOn ? '已开启加权采样' : '已关闭加权采样', 'ok');
+    } else { _toolsMsg('保存失败', 'err'); }
+  } catch (e) { _toolsMsg('保存失败: ' + e, 'err'); }
+}
+
+async function toolToggleTunnel() {
+  var sw = document.getElementById('sw-tunnel');
+  var willOn = sw.getAttribute('aria-checked') !== 'true';
+  if (willOn) {
+    _toolsMsg('启动中…');
+    try {
+      var st = await authFetch('/api/tunnel/status');
+      var sd = st && st.ok ? await st.json() : {};
+      if (!sd.token_set) { _toolsMsg('请先到「设置 → ⑥」保存 Cloudflare Token', 'err'); return; }
+      var resp = await authFetch('/api/tunnel/start', { method: 'POST' });
+      if (resp && resp.ok) { _toolsMsg('已请求启动，连接需几秒，稍后自动刷新', 'ok'); }
+      else { var d = resp ? await resp.json().catch(function(){return{};}) : {}; _toolsMsg('启动失败: ' + (d.error || ''), 'err'); }
+    } catch (e) { _toolsMsg('启动失败: ' + e, 'err'); }
+  } else {
+    _toolsMsg('停止中…');
+    try {
+      var resp2 = await authFetch('/api/tunnel/stop', { method: 'POST' });
+      if (resp2 && resp2.ok) { _setSwitch('sw-tunnel', 'led-tunnel', false); _toolsMsg('已停止外网访问', 'ok'); }
+      else { _toolsMsg('停止失败', 'err'); }
+    } catch (e) { _toolsMsg('停止失败: ' + e, 'err'); }
+  }
+  setTimeout(loadToolsPanel, 1500);  // tunnel 启动是异步的，回查真实状态
+}
+
+async function toolTestBreath() {
+  var out = document.getElementById('tools-action-result');
+  if (window.ObPet) ObPet.react('breath');   // 电子宠物：breath 反应
+  out.textContent = 'breath 中…';
+  try {
+    var resp = await authFetch('/api/breath?n=5');
+    if (!resp) return;
+    var d = await resp.json();
+    var items = (d.buckets || d.results || []).slice(0, 5);
+    if (!items.length) { out.textContent = '没有候选桶（库可能是空的）'; return; }
+    out.innerHTML = '<b style="color:var(--accent)">本次浮现：</b><br>' + items.map(function (b, i) {
+      var nm = esc(b.name || b.id || '(无名)');
+      var sc = (b.score != null) ? ' · ' + Number(b.score).toFixed(3) : '';
+      return (i + 1) + '. ' + nm + sc;
+    }).join('<br>');
+  } catch (e) { out.textContent = '失败: ' + e; }
+}
+
+async function toolGithubSync() {
+  var out = document.getElementById('tools-action-result');
+  out.textContent = '同步到 GitHub 中…';
+  try {
+    var resp = await authFetch('/api/github/sync', { method: 'POST' });
+    if (!resp) return;
+    var d = await resp.json().catch(function(){return{};});
+    if (resp.ok) { out.innerHTML = '<b style="color:var(--positive)">✓ 已备份</b> ' + esc(d.message || d.commit || ''); }
+    else { out.innerHTML = '<span style="color:var(--negative)">同步失败：' + esc(d.error || '请先在「设置 → ⑦」配置 GitHub') + '</span>'; }
+  } catch (e) { out.textContent = '失败: ' + e; }
 }
 
 async function loadHostVault() {
@@ -1939,12 +2733,35 @@ async function saveHostVault() {
 
 // authFetch: wraps fetch, shows auth overlay on 401
 async function authFetch(url, options) {
-  const resp = await fetch(url, options);
+  let resp = await fetch(url, options);
+  // 瞬时网关错误（多见于 Cloudflare 隧道刚重连的几秒窗口）：自动重试一次。
+  // 这些后端接口都是幂等的（读取 / upsert），重试安全，能让隧道抖动对用户隐形。
+  if (resp.status === 502 || resp.status === 503 || resp.status === 504) {
+    await new Promise(function (r) { setTimeout(r, 1200); });
+    try { resp = await fetch(url, options); } catch (e) { /* 保留首个响应 */ }
+  }
   if (resp.status === 401) {
     checkAuth();
     return null;
   }
   return resp;
+}
+
+// 安全解析 JSON：当响应体为空或不是 JSON（典型是 502/504 网关 HTML 错误页，
+// 隧道重连时会出现）时，抛出一句人话错误，而不是浏览器那句晦涩的
+// "Unexpected end of JSON input" / iOS Safari 的 "The string did not match the
+// expected pattern."。所有设置类接口都应走这里，避免把网关抖动显示成怪异报错。
+async function readJsonSafe(resp) {
+  var text = await resp.text();
+  if (!text || !text.trim()) {
+    throw new Error('服务无响应（HTTP ' + resp.status + '），可能是隧道正在重连，请稍后重试');
+  }
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    var snippet = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+    throw new Error('网关/网络错误（HTTP ' + resp.status + '）：' + (snippet || '响应非 JSON') + ' — 请稍后重试');
+  }
 }
 
 // ========================================
@@ -1961,6 +2778,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.getElementById('list-view').style.display = target === 'list' ? '' : 'none';
     document.getElementById('breath-view').style.display = target === 'breath' ? '' : 'none';
     document.getElementById('network-view').style.display = target === 'network' ? '' : 'none';
+    document.getElementById('tools-view').style.display = target === 'tools' ? '' : 'none';
     document.getElementById('plan-view').style.display = target === 'plan' ? '' : 'none';
     document.getElementById('import-view').style.display = target === 'import' ? '' : 'none';
     document.getElementById('logs-view').style.display = target === 'logs' ? '' : 'none';
@@ -1969,6 +2787,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.getElementById('anchors-view').style.display = target === 'anchors' ? '' : 'none';
     document.getElementById('about-view').style.display = target === 'about' ? '' : 'none';
     if (target === 'network') loadNetwork();
+    if (target === 'tools') loadToolsPanel();
     if (target === 'plan') loadPlans();
     if (target === 'import') { pollImportStatus(); loadImportResults(); }
     if (target === 'logs') { loadLogs(); loadOBErrors(); }
@@ -1978,9 +2797,11 @@ document.querySelectorAll('.tab').forEach(tab => {
       loadHumanName();
       loadConfig();
       refreshEnvConfig();
+      loadGithubStatus();
       loadSamplingSettings();
       loadEnvVars();
       loadHostVault();
+      loadLocalEmbStatus();
       // MCP 面板同步初始化（不依赖异步请求）
       const _mcpOriginEl = document.getElementById('mcp-local-origin');
       if (_mcpOriginEl) _mcpOriginEl.textContent = location.origin;
@@ -2032,6 +2853,7 @@ function updateStats() {
   const digested = allBuckets.filter(b => b.digested).length;
   document.getElementById('stats').textContent =
     total + ' 桶 · ' + pinned + ' 钉选 · ' + feels + ' feel · ' + resolved + ' 已解决 · ' + digested + ' 已消化';
+  updateChick(total);   // 小黄鸡蛋随记忆总数孵化长大
 }
 
 function buildFilters() {
@@ -2089,25 +2911,35 @@ function renderBuckets(buckets) {
   }
   list.innerHTML = visible.map(function(b) {
     // iter 1.8: dont_surface = 主动遗忘（仍在磁盘） / first_of_kind = 首次出现的标签组合
-    var iconName = b.dont_surface ? 'moon-off' : b.pinned ? 'pin' : b.type === 'feel' ? 'droplet' : b.digested ? 'leaf' : b.resolved ? 'moon' : 'message-circle';
-    var icon = '<i data-lucide="' + iconName + '"></i>';
+    // 图标：feel→计算表情、letter→信封、pinned→可发光的钉、其余沿用原逻辑
+    var iconCls = 'icon', iconHtml;
+    if (b.dont_surface)        iconHtml = '<i data-lucide="moon-off"></i>';
+    else if (b.pinned)       { iconHtml = '<i data-lucide="pin"></i>'; iconCls = 'icon pin-ic'; }
+    else if (b.type === 'feel')   iconHtml = feelFace(b.valence, b.arousal);
+    else if (b.type === 'letter') iconHtml = '<i data-lucide="mail"></i>';
+    else if (b.digested)     iconHtml = '<i data-lucide="leaf"></i>';
+    else if (b.resolved)     iconHtml = '<i data-lucide="moon"></i>';
+    else                     iconHtml = '<i data-lucide="message-circle"></i>';
     var firstBadge = b.first_of_kind ? ' <i data-lucide="sparkles" title="首次出现" style="width:12px;height:12px;color:var(--accent);vertical-align:-1px;"></i>' : '';
     var vPos = Math.round(b.valence * 100);
     var modelV = b.model_valence != null ? ' → V' + b.model_valence.toFixed(1) : '';
     var timeAgo = formatTimeAgo(b.last_active || b.created);
-    var rowStyle = b.dont_surface ? ' style="opacity:0.45;"' : '';
+    // 久未浮现（>45 天且非钉选/锚点/已遗忘）→ 稀疏虚线，视觉上「模糊、遥远」
+    var stale = !b.pinned && !b.anchor && !b.dont_surface && daysSince(b.last_active || b.created) >= 45;
+    var rowCls = 'bucket-row' + (stale ? ' faded' : '');
+    var inlineStyle = 'cursor:pointer;display:flex;align-items:center;' + (b.dont_surface ? 'opacity:0.45;' : '');
     // purge mode: prepend checkbox
     var purgeChk = _purgeMode
       ? '<input type="checkbox" class="purge-chk" data-id="' + b.id + '" data-name="' + esc(b.name) + '" onchange="purgeUpdateCount()" onclick="event.stopPropagation()" style="accent-color:var(--accent);margin-right:8px;flex-shrink:0;">'
       : '';
     var rowClick = _purgeMode ? 'onclick="purgeToggleRow(this)"' : 'onclick="showDetail(\'' + b.id + '\')"';
-    return '<div class="bucket-row"' + rowStyle + ' ' + rowClick + ' style="cursor:pointer;display:flex;align-items:center;">' +
+    return '<div class="' + rowCls + '" data-id="' + esc(b.id) + '" ' + rowClick + ' style="' + inlineStyle + '">' +
       purgeChk +
-      '<span class="icon">' + icon + '</span>' +
+      '<span class="' + iconCls + '">' + iconHtml + '</span>' +
       '<span class="name" title="' + esc(b.name) + '">' + esc(b.name) + firstBadge + '</span>' +
       '<span class="domain">' + (b.domain || []).join(', ') + '</span>' +
       '<span class="emotion"><span class="v-bar"><span class="v-dot" style="left:' + vPos + '%"></span></span>' + modelV + '</span>' +
-      '<span class="score">' + b.score.toFixed(2) + '</span>' +
+      '<span class="score">' + (b.score != null ? b.score.toFixed(2) : '—') + '</span>' +
       '<span class="time">' + timeAgo + '</span>' +
       '<span class="preview">' + esc(b.content_preview) + '</span>' +
     '</div>';
@@ -2135,6 +2967,9 @@ async function showDetail(id) {
     var res = await fetch(BASE + '/api/bucket/' + id);
     var b = await res.json();
     var meta = b.metadata || {};
+    // letter → 翻信纸展开动画；anchor → 引力线背景（坐标系质感）
+    panel.classList.toggle('letter-mode', meta.type === 'letter');
+    panel.classList.toggle('anchor-mode', !!meta.anchor);
     // iter 1.8: why_remembered = 这条为什么被记得（展示不计分）
     var whyHtml = meta.why_remembered ? ('<div style="margin:8px 0 16px;padding:10px 14px;border-left:3px solid var(--accent);background:var(--surface-solid);font-style:italic;color:var(--accent);font-family:\'Cormorant Garamond\',\'Noto Serif SC\',serif;line-height:1.7;">❝ ' + esc(meta.why_remembered) + ' ❞</div>') : '';
     var firstBadge = meta.first_of_kind ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);margin-left:8px;"><i data-lucide="sparkles" style="width:12px;height:12px;"></i>首次出现</span>' : '';
@@ -2164,7 +2999,7 @@ async function showDetail(id) {
         '<div class="field"><label>唤醒度</label>A' + (meta.arousal || 0.3).toFixed(2) + '</div>' +
         '<div class="field"><label>模型视角</label>' + (meta.model_valence != null ? 'V' + meta.model_valence.toFixed(2) : '—') + '</div>' +
         '<div class="field"><label>重要度</label>' + (meta.importance || 5) + '/10</div>' +
-        '<div class="field"><label>权重分</label>' + b.score.toFixed(4) + '</div>' +
+        '<div class="field"><label>权重分</label>' + (b.score != null ? b.score.toFixed(4) : '—') + '</div>' +
         '<div class="field"><label>激活次数</label>' + (meta.activation_count || 1) + '</div>' +
         '<div class="field"><label>已解决</label>' + (meta.resolved ? '✓' : '—') + '</div>' +
         '<div class="field"><label>已消化</label>' + (meta.digested ? '✓' : '—') + '</div>' +
@@ -2297,12 +3132,16 @@ async function bucketDelete(id) {
     var res = await fetch(BASE + '/api/bucket/' + id + '?confirm=true', { method: 'DELETE' });
     if (!res.ok) throw new Error(await res.text());
     closeDetail();
-    loadBuckets();
+    // 「放下」：让这条记忆轻轻消散，而不是直接消失
+    var sel = (window.CSS && CSS.escape) ? CSS.escape(id) : id;
+    var row = document.querySelector('.bucket-row[data-id="' + sel + '"]');
+    if (row) { row.classList.add('dissolving'); setTimeout(loadBuckets, 600); }
+    else { loadBuckets(); }
   } catch (e) { alert('删除失败: ' + e.message); }
 }
 
 function closeDetail() {
-  document.getElementById('detail-panel').classList.remove('open');
+  document.getElementById('detail-panel').classList.remove('open', 'letter-mode', 'anchor-mode');
 }
 
 // ============================================================
@@ -2333,12 +3172,13 @@ async function loadNetwork() {
   ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
   var W = canvas.offsetWidth, H = canvas.offsetHeight;
 
-  ctx.fillStyle = '#FDFCF0';
+  ctx.fillStyle = '#C7C9BC';
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = '#8A8070';
-  ctx.font = '14px Inter, sans-serif';
+  ctx.fillStyle = '#5B5D4F';
+  ctx.font = "14px 'Share Tech Mono', monospace";
   ctx.textAlign = 'center';
-  ctx.fillText('加载记忆网络…', W / 2, H / 2);
+  ctx.fillText('LOADING MEMORY NET…', W / 2, H / 2);
+  setNetTerminal('SCANNING · 正在读取记忆网络');
 
   try {
     var modeSel = document.getElementById('network-mode');
@@ -2351,11 +3191,20 @@ async function loadNetwork() {
     } else {
       initConceptNetwork(canvas, ctx, W, H, networkData);
     }
+    var _n = (networkData.nodes || []).length, _e = (networkData.edges || networkData.links || []).length;
+    setNetTerminal('ONLINE · ' + _n + ' nodes / ' + _e + ' links · mode=' + mode);
   } catch (e) {
-    ctx.fillStyle = '#8A8070';
+    ctx.fillStyle = '#5B5D4F';
     ctx.textAlign = 'center';
-    ctx.fillText('加载失败: ' + e.message, W / 2, H / 2 + 24);
+    ctx.fillText('LOAD FAILED: ' + e.message, W / 2, H / 2 + 24);
+    setNetTerminal('ERROR · ' + e.message);
   }
+}
+
+// 屏内 mini-terminal 滚动日志行
+function setNetTerminal(msg) {
+  var el = document.getElementById('network-terminal');
+  if (el) el.textContent = msg;
 }
 
 // –– 初始化（只跑一次，绑定交互） ––
@@ -2398,6 +3247,57 @@ function initConceptNetwork(canvas, ctx, W, H, data) {
       renderConceptNetwork(ctx, W, H, data);
     }
   });
+
+  // 悬浮 → 点亮光点 + 浮出发光气泡（不重算布局，故无抖动）
+  var bubble = ensureNetworkBubble();
+  canvas.addEventListener('mousemove', function (e) {
+    var rect = canvas.getBoundingClientRect();
+    var hit = hitTest(e.clientX - rect.left, e.clientY - rect.top, W, H);
+    if (hit !== networkState.hoverNode) {
+      networkState.hoverNode = hit;
+      renderConceptNetwork(ctx, W, H, data);   // 坐标已缓存，仅重绘
+    }
+    canvas.style.cursor = hit ? 'pointer' : 'default';
+    if (hit) {
+      var n = (data.nodes || []).find(function (x) { return x.id === hit; });
+      if (n) {
+        var deg = (data._adj && data._adj[hit] ? data._adj[hit].length : 0);
+        var kindTxt = n.kind === 'tag' ? '#tag' : (n.kind === 'mixed' ? '双链+tag' : '[[双链]]');
+        bubble.innerHTML =
+          '<b>' + esc((n.kind === 'tag' ? '#' : '') + (n.label || n.id)) + '</b>' +
+          (n.anchor ? ' <span style="color:var(--accent)">⚓ anchor</span>' : '') +
+          '<br>' + kindTxt + ' · freq ' + (n.freq || 1) + ' · 关联 ' + deg + ' 个';
+        bubble.style.left = (e.clientX + 16) + 'px';
+        bubble.style.top = (e.clientY + 16) + 'px';
+        bubble.style.opacity = '1';
+      }
+    } else {
+      bubble.style.opacity = '0';
+    }
+  });
+  canvas.addEventListener('mouseleave', function () {
+    bubble.style.opacity = '0';
+    if (networkState.hoverNode) { networkState.hoverNode = null; renderConceptNetwork(ctx, W, H, data); }
+    canvas.style.cursor = 'default';
+  });
+}
+
+// 屏内发光气泡（hover 详情），跟随光标
+function ensureNetworkBubble() {
+  var b = document.getElementById('network-hover-bubble');
+  if (b) return b;
+  b = document.createElement('div');
+  b.id = 'network-hover-bubble';
+  b.style.cssText = [
+    'position:fixed', 'z-index:300', 'pointer-events:none', 'opacity:0',
+    'transition:opacity .15s ease', 'max-width:260px',
+    'padding:9px 13px', 'border-radius:10px',
+    'background:var(--surface)', 'color:var(--text)',
+    "font-family:'Share Tech Mono',monospace", 'font-size:11px', 'line-height:1.65',
+    'box-shadow:4px 4px 14px var(--shadow-dark), -2px -2px 8px var(--shadow-light), inset 0 1px 0 rgba(255,255,255,0.6)'
+  ].join(';');
+  document.body.appendChild(b);
+  return b;
 }
 
 // –– 构建邻接表 ––
@@ -2460,7 +3360,7 @@ function renderConceptNetwork(ctx, W, H, data) {
   edges = edges.filter(function (e) { return visible.has(e.source) && visible.has(e.target); });
 
   if (!nodes.length) {
-    ctx.fillStyle = '#FDFCF0'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#C7C9BC'; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = '#8A8070'; ctx.textAlign = 'center';
     ctx.fillText('还没有 [[双链]] 或 #tag', W / 2, H / 2);
     return;
@@ -2524,20 +3424,20 @@ function renderConceptNetwork(ctx, W, H, data) {
   }
 
   // –– 绘制 ––
-  ctx.fillStyle = '#FDFCF0';
+  ctx.fillStyle = '#C7C9BC';
   ctx.fillRect(0, 0, W, H);
 
-  // 提示文字（全局视图显示）
+  // 提示文字（全局视图显示）— 屏内点阵字
   if (!focusId) {
-    ctx.fillStyle = '#B0A898';
-    ctx.font = '12px Inter, sans-serif';
+    ctx.fillStyle = '#7C7E6E';
+    ctx.font = "11px 'Share Tech Mono', monospace";
     ctx.textAlign = 'center';
-    ctx.fillText('显示频率最高的 ' + nodes.length + ' 个节点 · 点击节点展开邻居', W / 2, 22);
+    ctx.fillText('TOP ' + nodes.length + ' NODES · 悬浮看详情 · 点击展开邻居', W / 2, 22);
   } else {
-    ctx.fillStyle = '#B85C3C';
-    ctx.font = '12px Inter, sans-serif';
+    ctx.fillStyle = '#C2982F';
+    ctx.font = "11px 'Share Tech Mono', monospace";
     ctx.textAlign = 'center';
-    ctx.fillText('深度 ' + networkState.depth + ' · ' + nodes.length + ' 个节点 · 点击焦点节点返回全局', W / 2, 22);
+    ctx.fillText('DEPTH ' + networkState.depth + ' · ' + nodes.length + ' NODES · 点击焦点节点返回全局', W / 2, 22);
   }
 
   // 边
@@ -2549,58 +3449,54 @@ function renderConceptNetwork(ctx, W, H, data) {
     ctx.beginPath();
     ctx.moveTo(pa.x, pa.y); ctx.lineTo(pb.x, pb.y);
     ctx.strokeStyle = isFocusEdge
-      ? 'rgba(184,92,60,0.45)'
-      : 'rgba(138,128,112,' + Math.min(0.5, 0.15 + 0.08 * w) + ')';
-    ctx.lineWidth = isFocusEdge ? Math.min(4, 1 + 0.6 * w) : Math.min(2, 0.5 + 0.4 * w);
+      ? 'rgba(194,152,47,0.55)'
+      : 'rgba(37,39,30,' + Math.min(0.35, 0.10 + 0.06 * w) + ')';
+    ctx.lineWidth = isFocusEdge ? Math.min(3, 1 + 0.5 * w) : Math.min(1.6, 0.4 + 0.35 * w);
     ctx.stroke();
   });
 
-  // 节点
-  var colorByKind = { wiki: '#B85C3C', tag: '#4A7C59', mixed: '#9A7B4F' };
+  // 节点：LCD 单色光点。默认空灵小点 + （仅焦点）极简代号，详情靠 hover 气泡浮现
+  var hoverId = networkState.hoverNode;
   nodes.forEach(function (n) {
     var p = positions[n.id];
     if (!p) return;
-    var r = Math.max(4, Math.min(16, 3 + Math.sqrt(n.freq || 1) * 3));
-    var color = colorByKind[n.kind] || '#B85C3C';
+    var baseR = Math.max(2.5, Math.min(9, 2 + Math.sqrt(n.freq || 1) * 1.7));
     var isFocus = (n.id === focusId);
+    var isHover = (n.id === hoverId);
+    var lit = (isFocus || n.anchor || isHover);   // 点亮态 → 暖金
+    var r = isFocus ? baseR * 1.5 : (isHover ? baseR * 1.25 : baseR);
 
-    // 焦点节点：大一圈 + 朱砂外圈
-    if (isFocus) {
-      r = r * 1.4;
+    // 外发光
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r + (lit ? 7 : 4), 0, Math.PI * 2);
+    ctx.fillStyle = lit ? 'rgba(194,152,47,0.22)' : 'rgba(37,39,30,0.10)';
+    ctx.fill();
+
+    // 焦点/锚点外圈
+    if (isFocus || n.anchor) {
       ctx.beginPath();
-      ctx.arc(p.x, p.y, r + 8, 0, Math.PI * 2);
-      ctx.strokeStyle = '#B85C3C';
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-    } else if (n.anchor) {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, r + 6, 0, Math.PI * 2);
-      ctx.strokeStyle = '#B85C3C';
-      ctx.lineWidth = 2;
+      ctx.arc(p.x, p.y, r + (isFocus ? 9 : 6), 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(194,152,47,0.6)';
+      ctx.lineWidth = isFocus ? 2 : 1.3;
       ctx.stroke();
     }
 
-    // 光晕
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, r + 4, 0, Math.PI * 2);
-    ctx.fillStyle = color + (isFocus ? '40' : '20');
-    ctx.fill();
-
-    // 节点本体
+    // 光点本体
     ctx.beginPath();
     ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-    ctx.fillStyle = isFocus ? color : color + 'CC';
+    ctx.fillStyle = lit ? '#C2982F' : '#25271E';
     ctx.fill();
 
-    // 标签
-    var label = n.label || n.id;
-    if (label.length > 12) label = label.slice(0, 12) + '…';
-    var prefix = n.kind === 'tag' ? '#' : '';
-    var anchorMark = n.anchor ? '⚓ ' : '';
-    ctx.fillStyle = isFocus ? '#B85C3C' : (n.anchor ? '#B85C3C' : '#3A3530');
-    ctx.font = isFocus ? 'bold 12px Inter, sans-serif' : (n.anchor ? 'bold 11px Inter, sans-serif' : '11px Inter, sans-serif');
-    ctx.textAlign = 'center';
-    ctx.fillText(anchorMark + prefix + label, p.x, p.y + r + 14);
+    // 仅焦点节点显示极简代号（11px 等宽点阵）；其余节点保持空灵，hover 才出气泡
+    if (isFocus) {
+      var label = n.label || n.id;
+      if (label.length > 14) label = label.slice(0, 14) + '…';
+      var prefix = n.kind === 'tag' ? '#' : '';
+      ctx.fillStyle = '#25271E';
+      ctx.font = "bold 12px 'Share Tech Mono', monospace";
+      ctx.textAlign = 'center';
+      ctx.fillText((n.anchor ? '⚓ ' : '') + prefix + label, p.x, p.y + r + 16);
+    }
   });
 }
 
@@ -2616,16 +3512,17 @@ function injectNetworkControls() {
   bar.id = 'network-depth-control';
   bar.style.cssText = [
     'display:flex', 'align-items:center', 'gap:12px',
-    'padding:8px 16px', 'background:#F5F0E8',
-    'border-bottom:1px solid #D4C5B0',
-    'font-size:13px', 'color:#5A5040'
+    'padding:10px 18px', 'margin-bottom:14px',
+    'background:var(--surface)', 'border-radius:12px',
+    'box-shadow:4px 4px 11px var(--shadow-dark-subtle), -3px -3px 8px var(--shadow-light)',
+    'font-family:\'Share Tech Mono\',monospace', 'font-size:12px', 'color:var(--text-dim)'
   ].join(';');
 
   bar.innerHTML = [
-    '<span>展开深度</span>',
-    '<input id="depth-slider" type="range" min="1" max="4" value="2" style="width:100px;accent-color:#B5341A;">',
-    '<span id="depth-label" style="color:#B5341A;font-weight:600;min-width:16px">2</span>',
-    '<span style="color:#B0A898;font-size:11px;margin-left:8px">点击节点展开 · 再次点击返回全局</span>'
+    '<span>展开深度 / DEPTH</span>',
+    '<input id="depth-slider" type="range" min="1" max="4" value="2" style="width:100px;accent-color:var(--accent);">',
+    '<span id="depth-label" style="color:var(--accent);font-weight:600;min-width:16px">2</span>',
+    '<span style="color:var(--text-light);font-size:11px;margin-left:8px">点击节点展开 · 再次点击返回全局</span>'
   ].join('');
 
   parent.insertBefore(bar, canvas);
@@ -2655,7 +3552,7 @@ function drawConceptNetwork(ctx, W, H, data) {
 function drawBucketNetwork(ctx, W, H, data) {
   var nodes = data.nodes || [], edges = data.edges || [];
   if (!nodes.length) {
-    ctx.fillStyle = '#FDFCF0'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = '#C7C9BC'; ctx.fillRect(0,0,W,H);
     ctx.fillStyle = '#8A8070';
     ctx.fillText('没有记忆桶', W/2, H/2);
     return;
@@ -2687,7 +3584,7 @@ function drawBucketNetwork(ctx, W, H, data) {
     });
     nodes.forEach(function(n){var p=positions[n.id]; p.x+=(cx-p.x)*0.01; p.y+=(cy-p.y)*0.01;});
   }
-  ctx.fillStyle='#FDFCF0'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#C7C9BC'; ctx.fillRect(0,0,W,H);
   edges.forEach(function(e){
     var pa=positions[e.source], pb=positions[e.target]; if(!pa||!pb) return;
     var w=e.weight||0.5;
@@ -2750,11 +3647,180 @@ function formatTimeAgo(iso) {
   return Math.floor(days/30) + 'mo前';
 }
 
+function daysSince(iso) {
+  if (!iso) return 0;
+  var d = new Date(iso);
+  if (isNaN(d)) return 0;
+  return (Date.now() - d.getTime()) / 86400000;
+}
+
+// ============================================================
+// 小巧思 helpers — feel 表情 / 像素小黄鸡蛋 / 随机 placeholder
+// ============================================================
+
+// feel 表情：嘴形由 valence 决定，眼睛由 arousal 决定，每条 feel 的「脸」都是算出来的
+function feelFace(v, a) {
+  v = (v == null ? 0.5 : v); a = (a == null ? 0.3 : a);
+  var mouth = v >= 0.62 ? 'M5 10 Q8 13 11 10'          // 微笑
+            : v <= 0.38 ? 'M5 11.5 Q8 8.5 11 11.5'     // 沮丧
+                        : 'M5.5 10.7 L10.5 10.7';       // 平
+  var eye = a >= 0.6
+        ? '<circle cx="6" cy="6.6" r="1.5"/><circle cx="10" cy="6.6" r="1.5"/>'                               // 睁大（激动/紧张）
+        : (a <= 0.3
+            ? '<path d="M4.7 6.9 Q6 6.1 7.3 6.9" fill="none" stroke-width="1.1"/><path d="M8.7 6.9 Q10 6.1 11.3 6.9" fill="none" stroke-width="1.1"/>'  // 半阖（困倦/平静）
+            : '<circle cx="6" cy="6.6" r="1"/><circle cx="10" cy="6.6" r="1"/>');                              // 普通
+  var color = v >= 0.62 ? 'var(--positive)' : (v <= 0.38 ? 'var(--negative)' : 'var(--text-dim)');
+  // 高唤醒+高效价时加个小腮红点
+  var blush = (a >= 0.6 && v >= 0.6) ? '<circle cx="3.6" cy="9.2" r="0.9" fill="var(--accent)" opacity="0.5" stroke="none"/><circle cx="12.4" cy="9.2" r="0.9" fill="var(--accent)" opacity="0.5" stroke="none"/>' : '';
+  return '<svg class="feel-face" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" style="color:' + color + ';vertical-align:-3px;">' +
+    '<circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.2"/>' +
+    blush +
+    '<g fill="currentColor" stroke="currentColor">' + eye + '</g>' +
+    '<path d="' + mouth + '" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>' +
+    '</svg>';
+}
+
+// ============================================================
+// 像素电子宠物 · ObPet（HTML5 Canvas 点阵小鸡）
+//   字符→颜色：. 透明 / Y 鸡黄 / O 深黄冠 / W 蛋壳白 / S 壳影
+//   B 嘴橙 / K 豆豆眼 / L 蓝领结 / l 深蓝结 / P 波点蓝 / r 腮红
+//   三态：egg 蛋（晃动）→ chick 破壳雏鸡 → big 走来走去的肥嘟嘟大吉
+//   记忆越多越大；Hold / Breath 事件触发破壳 or 开心跳。像捏乐高一样的 2D 像素数组。
+// ============================================================
+window.ObPet = (function () {
+  var PAL = { '.':null, Y:'#FFD452', O:'#E0A92E', W:'#FFFFFF', S:'#E8DFC2', B:'#FF9F43', K:'#3A2E1E', L:'#5B8FD6', l:'#3E6FB0', P:'#7FB0E6', r:'#F6B6C2' };
+  var EGG = [
+    '................','......SSSS......','.....SWWWWS.....','....SWWWWWWS....',
+    '...SWWWPWWWWS...','...SWWWWWWWWS...','..SWWWWWWWWWWS..','..SWWPWWWWWWWS..',
+    '..SWWWWWWWPWWS..','..SWWWWWWWWWWS..','...SWWWPWWWWS...','...SWWWWWWWWS...',
+    '....SWWWWWWS....','.....SWWWWS.....','......SSSS......','................'];
+  var EGG_CRACK = [
+    '................','......SSSS......','.....SWWWWS.....','....SWWWWWWS....',
+    '...SWWKWWKWWS...','...SWWWWWWWWS...','..SWWWBBWWWWWS..','..SOWWOWWOWWOS..',
+    '..SWOWWOWWOWWS..','..SWWWWWWWWWWS..','...SWWWWWWWWS...','...SWWWWWWWWS...',
+    '....SWWWWWWS....','.....SWWWWS.....','......SSSS......','................'];
+  var CHICK = [
+    '................','......YYYY......','.....YYYYYY.....','....YYYYYYYY....',
+    '....YKYYYYKY....','....YYYYYYYY....','....YYYBBYYY....','...YYYYYYYYYY...',
+    '..YYYYYYYYYYYY..','..YYYYYYYYYYYY..','..YYYYYYYYYYYY..','...YYYYYYYYYY...',
+    '....YYYYYYYY....','.....YYYYYY.....','.....B....B.....','....BB....BB....'];
+  var CHICK_BLINK = [
+    '................','......YYYY......','.....YYYYYY.....','....YYYYYYYY....',
+    '....YYYYYYYY....','....YYYYYYYY....','....YYYBBYYY....','...YYYYYYYYYY...',
+    '..YYYYYYYYYYYY..','..YYYYYYYYYYYY..','..YYYYYYYYYYYY..','...YYYYYYYYYY...',
+    '....YYYYYYYY....','.....YYYYYY.....','.....B....B.....','....BB....BB....'];
+  var BIG1 = [
+    '.......OO.......','......YYYY......','.....YYYYYY.....','....YKYYYYKY....',
+    '...rYYYYYYYYr...','....YYYBBYYY....','...YYYYYYYYYY...','..YYYYYYYYYYYY..',
+    '..YYYYYYYYYYYY..','..YYYYYYYYYYYY..','..YYYYYYYYYYYY..','...YYYYYYYYYY...',
+    '....YYLllLYY....','.....YYYYYY.....','....B......B....','...BB......BB...'];
+  var BIG2 = [
+    '.......OO.......','......YYYY......','.....YYYYYY.....','....YKYYYYKY....',
+    '...rYYYYYYYYr...','....YYYBBYYY....','...YYYYYYYYYY...','..YYYYYYYYYYYY..',
+    '..YYYYYYYYYYYY..','..YYYYYYYYYYYY..','..YYYYYYYYYYYY..','...YYYYYYYYYY...',
+    '....YYLllLYY....','.....YYYYYY.....','.....B....B.....','....BB....BB....'];
+  var SPR = 16, W = 64, H = 24, SCALE = 2;
+  var host, cv, ctx, raf = null, t0 = 0;
+  var st = { stage:'egg', count:0, x:24, dir:1, frame:0, blinkT:0, hatchT:0, hopT:0, started:false };
+
+  function ensure() {
+    host = document.getElementById('ob-chick');
+    if (!host) { host = document.createElement('div'); host.id = 'ob-chick'; document.body.appendChild(host); }
+    if (!cv) {
+      host.style.width = 'auto'; host.style.height = 'auto';
+      host.innerHTML = '<canvas width="' + W + '" height="' + H + '" style="display:block;width:' + (W*SCALE) + 'px;height:' + (H*SCALE) + 'px;image-rendering:pixelated;"></canvas><div class="chick-tip"></div>';
+      cv = host.querySelector('canvas'); ctx = cv.getContext('2d');
+      host.addEventListener('click', function () { react('poke'); });
+    }
+  }
+  function setTip(s) { var t = host && host.querySelector('.chick-tip'); if (t) t.textContent = s; }
+  function stageFor(n) { return n < 1 ? 'egg' : (n < 25 ? 'chick' : 'big'); }
+  function draw(frame, ox, oy, flip) {
+    for (var y = 0; y < frame.length; y++) { var row = frame[y];
+      for (var x = 0; x < row.length; x++) { var col = PAL[row[x]]; if (!col) continue;
+        ctx.fillStyle = col; ctx.fillRect((flip ? ox + (SPR-1-x) : ox + x), oy + y, 1, 1);
+      } }
+  }
+  function render(now) {
+    raf = requestAnimationFrame(render);
+    var dt = now - (t0 || now); t0 = now;
+    ctx.clearRect(0, 0, W, H);
+    var oy = H - SPR;
+    if (st.hatchT > 0) {                              // 破壳过场
+      st.hatchT -= dt;
+      var shake = (Math.floor(now / 70) % 2) ? 1 : -1;
+      if (st.hatchT > 600) draw(EGG, 24 + shake, oy, false);
+      else if (st.hatchT > 250) draw(EGG_CRACK, 24 + shake, oy, false);
+      else draw(CHICK, 24, oy, false);
+      if (st.hatchT <= 0) { st.stage = stageFor(st.count); st.x = 24; }
+    } else if (st.stage === 'egg') {                  // 蛋：轻晃
+      draw(EGG, 24 + Math.round(Math.sin(now / 420)), oy, false);
+    } else if (st.stage === 'chick') {                // 雏鸡：眨眼 + 微微点头
+      st.blinkT += dt;
+      var bob = (Math.floor(now / 320) % 2) ? 0 : -1;
+      draw((st.blinkT % 3200) < 150 ? CHICK_BLINK : CHICK, 24, oy + bob, false);
+    } else {                                          // 大吉：走来走去
+      var hop = 0;
+      if (st.hopT > 0) { st.hopT -= dt; hop = Math.round(Math.sin((1 - st.hopT / 300) * Math.PI) * -3); }
+      st.frame += dt; var step = Math.floor(st.frame / 150) % 2;
+      st.x += st.dir * dt * 0.012;
+      if (st.x < 2) { st.x = 2; st.dir = 1; } else if (st.x > W - SPR - 2) { st.x = W - SPR - 2; st.dir = -1; }
+      draw(step ? BIG1 : BIG2, Math.round(st.x), oy + (step ? 0 : -1) + hop, st.dir < 0);
+    }
+  }
+  function start() { if (!raf) { t0 = 0; raf = requestAnimationFrame(render); } }
+  function setCount(n) {
+    ensure(); n = n || 0; var prev = st.stage; st.count = n; var s = stageFor(n);
+    if (st.started && prev === 'egg' && s !== 'egg') st.hatchT = 1000;   // 首次破壳过场
+    else if (!st.started) st.stage = s;
+    st.started = true;
+    setTip(s === 'egg' ? '一颗蛋 · 记点东西我就孵化' : (s === 'chick' ? '破壳啦 · ' + n + ' 段记忆' : '肥嘟嘟大吉 🎀 · ' + n + ' 段记忆'));
+    start();
+  }
+  function react(type) {
+    ensure();
+    if (st.stage === 'egg' && st.hatchT <= 0) { st.hatchT = 1000; setTip('咔嚓——破壳！'); }
+    else { st.hopT = 300; setTip(type === 'breath' ? 'breath～它跳了一下' : (type === 'hold' ? '记住啦 :)' : '戳我干嘛 :)')); }
+    start();
+  }
+  return { setCount: setCount, react: react };
+})();
+
+function updateChick(total) { if (window.ObPet) ObPet.setCount(total || 0); }
+
+// 搜索框空闲时，placeholder 偶尔换一句
+var _phLines = [
+  '搜索记忆…',
+  '搜索一段没说出口的话…',
+  '找找那个让你停下来的瞬间…',
+  '输入一个名字，或一种心情…',
+  '它可能藏在某个 #标签 里…',
+  '搜一件你以为忘了的事…',
+  '某个深夜，某句话，某个人…'
+];
+function startPlaceholderRotation() {
+  var input = document.getElementById('search-input');
+  if (!input) return;
+  setInterval(function () {
+    if (document.activeElement === input || input.value) return;  // 有焦点或有内容时不打扰
+    var next = _phLines[Math.floor(Math.random() * _phLines.length)];
+    input.style.transition = 'opacity .4s';
+    input.style.opacity = '0.45';
+    setTimeout(function () { input.placeholder = next; input.style.opacity = '1'; }, 400);
+  }, 6500);
+}
+
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeDetail();
   if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
-    e.preventDefault();
-    document.getElementById('search-input').focus();
+    // Only hijack '/' when focus is NOT already in a text input / textarea / select
+    var tag = document.activeElement && document.activeElement.tagName;
+    var editable = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+      || (document.activeElement && document.activeElement.isContentEditable);
+    if (!editable) {
+      e.preventDefault();
+      document.getElementById('search-input').focus();
+    }
   }
 });
 
@@ -2765,6 +3831,7 @@ async function runBreathDebug() {
   var results = document.getElementById('breath-results');
   var info = document.getElementById('breath-info');
 
+  if (window.ObPet) ObPet.react('breath');   // 电子宠物：breath 时跳一下/破壳
   results.innerHTML = '<div class="loading">计算中…</div>';
 
   var url = BASE + '/api/breath-debug?q=' + encodeURIComponent(query);
@@ -2952,6 +4019,239 @@ document.addEventListener('click', function(e) {
   }
 });
 
+// ---- 本地向量模型 (Ollama / bge-m3) ----
+async function loadLocalEmbStatus() {
+  var el = document.getElementById('local-emb-status');
+  if (!el) return;
+  try {
+    var r = await authFetch('/api/embedding/local/status?model=bge-m3');
+    if (!r) return;
+    var d = await readJsonSafe(r);
+    if (!d.ok) { el.textContent = '状态读取失败'; return; }
+    el.innerHTML =
+      'Ollama 服务：' + (d.reachable ? '<b style="color:var(--positive,#2a9d3f)">已连接</b>' : '<b style="color:var(--negative)">未连接</b>') +
+      ' · <code>' + esc(d.ollama_url || '') + '</code><br>' +
+      'bge-m3 模型：' + (d.has_model ? '<b style="color:var(--positive,#2a9d3f)">已就绪 ✓</b>' : '<b style="color:var(--warning,#b89962)">未下载（先点①）</b>') +
+      (d.models && d.models.length ? '<br><span style="color:var(--text-light)">已装：' + d.models.map(esc).join(', ') + '</span>' : '');
+    var hint = document.getElementById('local-emb-hint');
+    if (hint) {
+      if (!d.reachable) hint.innerHTML = '⚠ 未检测到 ollama。VPS 上应有常驻 <code>ombre-ollama</code> 容器；本机自建：<code>docker run -d --name ombre-ollama --restart unless-stopped -v ollama:/root/.ollama ollama/ollama</code> 并与 OB 同网络。';
+      else hint.textContent = '提示：切换云端↔本地会全库重算（Gemini 3072 维 ↔ bge-m3 1024 维不通用），重算期间检索暂用旧库，不影响使用。';
+    }
+    if (d.pull && d.pull.running) { _renderLocalPull(d.pull); _startLocalPullPolling(); }
+  } catch (e) {
+    el.textContent = '状态读取失败：' + (e.message || e);
+  }
+}
+
+var _localPullTimer = null;
+function _renderLocalPull(p) {
+  var el = document.getElementById('local-emb-pull-status');
+  if (!el || !p) return;
+  if ((p.status === 'idle' || !p.status) && !p.running) { el.textContent = ''; return; }
+  var txt = '下载 ' + esc(p.model || '') + '：' + esc(p.status || '') + (p.percent ? ' · ' + p.percent + '%' : '');
+  if (p.status === 'success') txt = '<b style="color:var(--positive,#2a9d3f)">✓ ' + esc(p.model || '') + ' 下载完成</b>';
+  if (p.status === 'error') txt = '<b style="color:var(--negative)">✗ 下载失败：' + esc(p.error || '') + '</b>';
+  el.innerHTML = txt;
+}
+async function _pollLocalPull() {
+  try {
+    var r = await authFetch('/api/embedding/local/pull/status');
+    if (!r) return;
+    var d = await readJsonSafe(r);
+    if (!d.ok) return;
+    _renderLocalPull(d.pull);
+    if (d.pull && !d.pull.running) {
+      if (_localPullTimer) { clearInterval(_localPullTimer); _localPullTimer = null; }
+      loadLocalEmbStatus();
+    }
+  } catch (e) { /* ignore */ }
+}
+function _startLocalPullPolling() {
+  if (_localPullTimer) return;
+  _pollLocalPull();
+  _localPullTimer = setInterval(_pollLocalPull, 2000);
+}
+async function pullLocalModel() {
+  var mirror = document.getElementById('local-emb-mirror').value;
+  var custom = (document.getElementById('local-emb-mirror-custom').value || '').trim();
+  var body = { model: 'bge-m3', mirror: custom || mirror };
+  var el = document.getElementById('local-emb-pull-status');
+  if (el) el.textContent = '启动下载…';
+  try {
+    var r = await authFetch('/api/embedding/local/pull', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    if (!r) return;
+    var d = await readJsonSafe(r);
+    if (!d.ok) { if (el) el.innerHTML = '<b style="color:var(--negative)">✗ ' + esc(d.error || '启动失败') + '</b>'; return; }
+    _startLocalPullPolling();
+  } catch (e) {
+    if (el) el.innerHTML = '<b style="color:var(--negative)">✗ ' + esc(e.message || e) + '</b>';
+  }
+}
+async function switchEmbedding(mode, skipConfirm) {
+  var payload, label;
+  if (mode === 'ollama') {
+    payload = { target_backend: 'ollama', api_format: 'ollama', model: 'bge-m3', base_url: '' };
+    label = '本地 bge-m3';
+  } else {
+    payload = { target_backend: 'gemini', api_format: 'gemini', model: 'gemini-embedding-001' };
+    label = '云端 Gemini';
+  }
+  if (!skipConfirm && !confirm('即将切换到「' + label + '」并重算全库向量。\n\n· 后台运行，期间可正常使用（检索暂用旧库）\n· Gemini 3072 维 ↔ bge-m3 1024 维不通用，必须重算\n· 切到本地前请确认 bge-m3 已下载\n\n继续？')) return;
+  var st = document.getElementById('emb-migrate-status');
+  if (st) st.textContent = '启动中…';
+  try {
+    var r = await authFetch('/api/embedding/migrate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    });
+    if (!r) return;
+    var d = await readJsonSafe(r);
+    if (r.status === 202 && d.ok) {
+      _startEmbMigratePolling();
+    } else {
+      alert('启动失败：' + (d.error || ('HTTP ' + r.status)));
+    }
+  } catch (e) {
+    alert('请求失败：' + (e.message || e));
+  }
+}
+
+// 一键搭建：检查 ollama → 缺模型则下载并等待 → 切换到本地并重算
+async function oneClickLocal() {
+  if (!confirm('一键搭建本地向量化（bge-m3）：\n\n· 需要约 2–3GB 空闲内存 + 1.2GB 磁盘\n· 下载模型（约 1.2GB）→ 自动切换 → 全库重算向量\n· 全程后台进行，期间可正常使用（检索暂用旧库）\n· 之后可随时「切回云端 Gemini」\n\n开始？')) return;
+  var r = await authFetch('/api/embedding/local/status?model=bge-m3');
+  if (!r) return;
+  var d;
+  try { d = await readJsonSafe(r); } catch (e) { alert('读取本地状态失败：' + (e.message || e)); return; }
+  if (!d.ok || !d.reachable) {
+    alert('未检测到 Ollama 服务。\n\n请先启动 ollama 容器（与 OB 同一 docker 网络）：\n\n  docker run -d --name ombre-ollama --restart unless-stopped \\\n    -v ollama:/root/.ollama ollama/ollama\n\n或在 deploy/docker-compose.yml 里启用 ollama 服务后：docker compose up -d ollama\n\n启动后再点本按钮。');
+    return;
+  }
+  if (!d.has_model) {
+    var pmsg = document.getElementById('local-emb-pull-status');
+    if (pmsg) pmsg.textContent = '开始下载 bge-m3（约 1.2GB）…';
+    await pullLocalModel();
+    var ok = await _waitLocalPull();
+    if (!ok) { alert('模型下载未成功，已中止（未改动现有向量）。可在「分步操作」里换个下载镜像重试。'); return; }
+  }
+  await switchEmbedding('ollama', true);
+}
+// 等待拉取完成；true=成功
+function _waitLocalPull() {
+  return new Promise(function (resolve) {
+    var waited = 0;
+    var iv = setInterval(async function () {
+      waited += 2;
+      try {
+        var r = await authFetch('/api/embedding/local/pull/status');
+        if (r) {
+          var d = await readJsonSafe(r);
+          var p = (d && d.pull) || {};
+          if (!p.running) { clearInterval(iv); resolve(p.status === 'success'); return; }
+        }
+      } catch (e) { /* keep waiting */ }
+      if (waited > 1800) { clearInterval(iv); resolve(false); }  // 30min 上限
+    }, 2000);
+  });
+}
+
+// ---- GitHub 同步 ----
+async function loadGithubStatus() {
+  try {
+    var res = await authFetch('/api/github/status');
+    if (!res || !res.ok) return;
+    var d = await res.json();
+    if (d.repo) document.getElementById('gh-repo').placeholder = '当前: ' + d.repo;
+    if (d.branch) document.getElementById('gh-branch').placeholder = '当前: ' + d.branch;
+    if (d.path_prefix !== undefined) document.getElementById('gh-prefix').placeholder = d.path_prefix || '（仓库根目录）';
+    var autoMin = d.auto_interval_minutes || 0;
+    var ghIntervalEl = document.getElementById('gh-interval');
+    if (ghIntervalEl) ghIntervalEl.value = String(autoMin);
+    var box = document.getElementById('gh-status-box');
+    if (d.configured && box) {
+      box.style.display = '';
+      document.getElementById('gh-st-repo').textContent = d.repo || '—';
+      document.getElementById('gh-st-branch').textContent = d.branch || '—';
+      document.getElementById('gh-st-prefix').textContent = d.path_prefix || '（根目录）';
+      var intervalLabels = {0:'关闭', 30:'每 30 分钟', 60:'每 1 小时', 360:'每 6 小时', 720:'每 12 小时', 1440:'每 24 小时'};
+      document.getElementById('gh-st-interval').textContent = intervalLabels[autoMin] || (autoMin > 0 ? '每 ' + autoMin + ' 分钟' : '关闭');
+      document.getElementById('gh-st-time').textContent = d.last_sync ? new Date(d.last_sync).toLocaleString() : '从未';
+      document.getElementById('gh-st-status').textContent = {idle:'待机', ok:'成功 ✓', error:'失败 ✗'}[d.last_status] || d.last_status;
+      var errRow = document.getElementById('gh-st-error-row');
+      if (d.last_error) {
+        errRow.style.display = '';
+        document.getElementById('gh-st-error').textContent = d.last_error;
+      } else { errRow.style.display = 'none'; }
+    }
+  } catch(e) {}
+}
+
+async function saveGithubConfig() {
+  var msg = document.getElementById('gh-msg');
+  var token = (document.getElementById('gh-token').value || '').trim();
+  var repo = (document.getElementById('gh-repo').value || '').trim();
+  var branch = (document.getElementById('gh-branch').value || '').trim() || 'main';
+  var prefix = (document.getElementById('gh-prefix').value || '').trim();
+  var autoInterval = parseInt(document.getElementById('gh-interval').value || '0', 10);
+  if (!repo) { msg.textContent = '⚠ 请填写仓库名（owner/repo）'; msg.style.color = 'var(--accent)'; return; }
+  msg.textContent = '保存中…'; msg.style.color = '';
+  try {
+    var res = await authFetch('/api/github/config', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({token, repo, branch, path_prefix: prefix, auto_interval_minutes: autoInterval}),
+    });
+    var d = await res.json();
+    if (d.ok) {
+      msg.textContent = '✓ 配置已保存';
+      msg.style.color = 'var(--success, green)';
+      document.getElementById('gh-token').value = '';
+      await loadGithubStatus();
+    } else {
+      msg.textContent = '✗ ' + (d.error || '保存失败');
+      msg.style.color = 'var(--accent)';
+    }
+  } catch(e) { msg.textContent = '✗ 网络错误'; msg.style.color = 'var(--accent)'; }
+}
+
+async function validateGithub() {
+  var msg = document.getElementById('gh-msg');
+  msg.textContent = '验证中…'; msg.style.color = '';
+  try {
+    var res = await authFetch('/api/github/validate', {method: 'POST'});
+    var d = await res.json();
+    if (d.ok) {
+      msg.textContent = '✓ 连接成功：' + d.repo_full_name + (d.private ? '（私有）' : '（公开）');
+      msg.style.color = 'var(--success, green)';
+    } else {
+      msg.textContent = '✗ ' + (d.error || '验证失败');
+      msg.style.color = 'var(--accent)';
+    }
+  } catch(e) { msg.textContent = '✗ 网络错误'; msg.style.color = 'var(--accent)'; }
+}
+
+async function runGithubSync() {
+  var msg = document.getElementById('gh-msg');
+  var btn = document.getElementById('gh-sync-btn');
+  btn.disabled = true; btn.textContent = '同步中…';
+  msg.textContent = '正在上传 bucket 文件到 GitHub…'; msg.style.color = '';
+  try {
+    var res = await authFetch('/api/github/sync', {method: 'POST'});
+    var d = await res.json();
+    if (d.ok) {
+      msg.textContent = '✓ 同步完成，上传 ' + d.uploaded + ' 个文件';
+      msg.style.color = 'var(--success, green)';
+      await loadGithubStatus();
+    } else {
+      msg.textContent = '✗ ' + (d.error || '同步失败');
+      msg.style.color = 'var(--accent)';
+    }
+  } catch(e) { msg.textContent = '✗ 网络错误'; msg.style.color = 'var(--accent)'; }
+  btn.disabled = false; btn.textContent = '立即同步 ↑';
+}
+
 async function loadConfig() {
   try {
     var res = await authFetch('/api/config');
@@ -2959,12 +4259,16 @@ async function loadConfig() {
     var cfg = await res.json();
     document.getElementById('cfg-dehy-model').value = cfg.dehydration.model || '';
     document.getElementById('cfg-dehy-url').value = cfg.dehydration.base_url || '';
+    var fmtEl = document.getElementById('cfg-dehy-format');
+    if (fmtEl) { fmtEl.value = cfg.dehydration.api_format || 'openai_compat'; onDehyFormatChange(); }
     var dehyNotice = document.getElementById('dehy-key-notice');
     if (dehyNotice) dehyNotice.style.display = cfg.dehydration.api_key_masked ? 'none' : '';
     document.getElementById('cfg-dehy-maxtokens').value = cfg.dehydration.max_tokens || 1024;
     document.getElementById('cfg-dehy-temp').value = cfg.dehydration.temperature || 0.1;
     document.getElementById('cfg-emb-enabled').value = cfg.embedding.enabled ? 'true' : 'false';
     document.getElementById('cfg-emb-model').value = cfg.embedding.model || '';
+    var embFmtEl = document.getElementById('cfg-emb-format');
+    if (embFmtEl) { embFmtEl.value = cfg.embedding.api_format || 'openai_compat'; onEmbFormatChange(); }
     var backendSel = document.getElementById('cfg-emb-backend');
     backendSel.value = cfg.embedding.backend || 'local';
     var noteEl = document.getElementById('cfg-emb-backend-note');
@@ -2995,7 +4299,7 @@ async function refreshEnvConfig() {
   try {
     var r = await authFetch('/api/env-config');
     if (!r) return;
-    var d = await r.json();
+    var d = await readJsonSafe(r);
     if (!d || !d.ok) return;
     var f = d.fields || {};
     // Compress
@@ -3006,6 +4310,8 @@ async function refreshEnvConfig() {
     if (el) el.value = (f['OMBRE_COMPRESS_BASE_URL'] || {}).value || '';
     el = document.getElementById('env-compress-model');
     if (el) el.value = (f['OMBRE_COMPRESS_MODEL'] || {}).value || '';
+    el = document.getElementById('env-compress-format');
+    if (el) el.value = (f['OMBRE_COMPRESS_FORMAT'] || {}).value || 'openai_compat';
     // Embed
     el = document.getElementById('env-embed-key');
     if (el) { el.placeholder = f['OMBRE_EMBED_API_KEY'] && f['OMBRE_EMBED_API_KEY'].is_set ? '当前：' + (f['OMBRE_EMBED_API_KEY'].value || '***') + '（留空 = 不修改）' : '未设置'; el.value = ''; }
@@ -3030,7 +4336,15 @@ async function refreshEnvConfig() {
     if (el) el.value = (f['OMBRE_HOOK_URL'] || {}).value || '';
     el = document.getElementById('env-hook-skip');
     if (el) { var skipVal = (f['OMBRE_HOOK_SKIP'] || {}).value || ''; el.value = (skipVal === 'true' || skipVal === '1' || skipVal === 'yes') ? 'true' : ''; }
-  } catch (_) {}
+  } catch (e) {
+    // 不再静默吞掉：把失败显示在状态行 + 用 placeholder 提示，避免 key 框卡在「加载中…」
+    var st = document.getElementById('env-config-status');
+    if (st) { st.style.color = 'var(--negative)'; st.textContent = '配置加载失败：' + (e && e.message ? e.message : e); }
+    ['env-compress-key', 'env-embed-key', 'cfg-emb-api-key', 'cfg-dehy-key'].forEach(function (id) {
+      var el2 = document.getElementById(id);
+      if (el2 && (!el2.placeholder || el2.placeholder.indexOf('加载') !== -1)) el2.placeholder = '（加载失败，请重试）';
+    });
+  }
 }
 
 async function saveEnvConfig() {
@@ -3044,6 +4358,8 @@ async function saveEnvConfig() {
   if (base !== undefined) updates['OMBRE_COMPRESS_BASE_URL'] = base;
   var model = document.getElementById('env-compress-model').value.trim();
   if (model !== undefined) updates['OMBRE_COMPRESS_MODEL'] = model;
+  var fmt = (document.getElementById('env-compress-format') || {value:''}).value;
+  if (fmt) updates['OMBRE_COMPRESS_FORMAT'] = fmt;
   // Embed
   var ekey = document.getElementById('env-embed-key').value.trim();
   if (ekey) updates['OMBRE_EMBED_API_KEY'] = ekey;
@@ -3067,7 +4383,7 @@ async function saveEnvConfig() {
       body: JSON.stringify({ updates: updates })
     });
     if (!r) return;
-    var d = await r.json();
+    var d = await readJsonSafe(r);
     if (d && d.ok) {
       statusEl.innerHTML = '<span style="color:var(--positive,#2a9d3f)">✓ 已保存：' + (d.updated || []).join(', ') + (d.warnings && d.warnings.length ? '<br><span style="color:var(--negative)">' + d.warnings.join('; ') + '</span>' : '') + '</span>';
       refreshEnvConfig();  // 刷新显示新的脱敏值
@@ -3089,7 +4405,7 @@ async function _saveEnvKeys(updates, msgElId) {
       body: JSON.stringify({ updates: updates })
     });
     if (!r) return;
-    var d = await r.json();
+    var d = await readJsonSafe(r);
     if (d && d.ok) {
       if (msgEl) msgEl.innerHTML = '<span style="color:var(--positive,#2a9d3f)">✓ 已保存</span>';
       refreshEnvConfig();
@@ -3127,11 +4443,13 @@ async function saveConfig(persist) {
       base_url: document.getElementById('cfg-dehy-url').value,
       max_tokens: parseInt(document.getElementById('cfg-dehy-maxtokens').value) || 1024,
       temperature: parseFloat(document.getElementById('cfg-dehy-temp').value) || 0.1,
+      api_format: (document.getElementById('cfg-dehy-format') || {value:'openai_compat'}).value || 'openai_compat',
     },
     embedding: {
       enabled: document.getElementById('cfg-emb-enabled').value === 'true',
       model: document.getElementById('cfg-emb-model').value,
       backend: document.getElementById('cfg-emb-backend').value,
+      api_format: (document.getElementById('cfg-emb-format') || {value:'openai_compat'}).value || 'openai_compat',
     },
     merge_threshold: parseInt(document.getElementById('cfg-merge').value) || 75,
     surfacing: {
@@ -3292,19 +4610,27 @@ async function loadAbout() {
   try {
     const r = await fetch(BASE + '/api/author');
     const d = await r.json();
-    var html = '<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:30px;color:var(--accent);margin:0 0 8px;font-style:italic;">' + esc(d.title || '') + '</h2>';
-    html += '<div style="height:1px;background:var(--border);margin:14px 0 22px;"></div>';
+    // 复古掌机外壳里的「一封信」：米色注塑卡 + 像素标题 + 暖色衬线正文，与全局设计语言对齐
+    var html = '<div style="background:var(--surface);border-radius:var(--shell-radius);padding:34px 36px 30px;' +
+      'box-shadow:8px 8px 22px var(--shadow-dark-subtle), -7px -7px 16px var(--shadow-light), inset 0 1px 0 rgba(255,255,255,0.55);">';
+    html += '<div style="font-family:\'VT323\',monospace;font-size:46px;line-height:1;color:var(--accent);text-shadow:0 0 14px var(--accent-glow);letter-spacing:1px;">' + esc(d.title || '') + '</div>';
+    html += '<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;letter-spacing:2px;color:var(--text-light);text-transform:uppercase;margin-top:6px;">AUTHOR · 作者有话说</div>';
+    html += '<div style="height:1px;background:var(--border);margin:18px 0 24px;"></div>';
     (d.sections || []).forEach(function(s) {
-      html += '<h3 style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--text);margin:18px 0 8px;font-weight:500;">' + esc(s.heading) + '</h3>';
-      html += '<div style="white-space:pre-wrap;color:var(--text);line-height:1.95;">' + esc(s.body) + '</div>';
+      html += '<h3 style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:var(--accent);margin:22px 0 10px;font-weight:400;letter-spacing:1px;text-transform:uppercase;">' + esc(s.heading) + '</h3>';
+      html += '<div style="white-space:pre-wrap;color:var(--text);line-height:2.0;font-family:\'Noto Serif SC\',Georgia,serif;">' + esc(s.body) + '</div>';
     });
-    if (d.signature) html += '<div style="margin-top:28px;text-align:right;color:var(--text-dim);font-style:italic;font-family:\'Cormorant Garamond\',serif;font-size:16px;">' + esc(d.signature) + '</div>';
+    if (d.signature) html += '<div style="margin-top:30px;text-align:right;color:var(--text-dim);font-family:\'Share Tech Mono\',monospace;font-size:14px;letter-spacing:1px;">' + esc(d.signature) + '</div>';
     if (d.ifdian) {
-      html += '<div style="margin-top:28px;padding:18px;background:var(--surface-solid);border:1px solid var(--border);border-radius:4px;text-align:center;">' +
-        '<div style="font-size:13px;color:var(--text-dim);margin-bottom:8px;">如果它对你有用 / If it helped</div>' +
-        '<a href="' + esc(d.ifdian) + '" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;font-size:15px;border-bottom:1px solid var(--accent);padding-bottom:2px;">' +
+      html += '<div style="margin-top:30px;padding:22px;background:var(--surface-solid);border-radius:14px;text-align:center;' +
+        'box-shadow:inset 3px 3px 8px var(--shadow-dark-subtle), inset -3px -3px 6px var(--shadow-light);">' +
+        '<div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px;">如果它对你有用 / IF IT HELPED</div>' +
+        '<a href="' + esc(d.ifdian) + '" target="_blank" rel="noopener" style="display:inline-block;color:#fffdf5;text-decoration:none;font-size:14px;padding:11px 26px;border-radius:13px;' +
+        'background:linear-gradient(150deg, var(--accent-light), var(--accent));text-shadow:0 1px 1px rgba(120,90,20,0.35);' +
+        'box-shadow:5px 5px 13px var(--shadow-dark), -4px -4px 10px var(--shadow-light), inset 0 1px 0 rgba(255,255,255,0.35);">' +
         '☕ 在爱发电支持我 / Support on Afdian</a></div>';
     }
+    html += '</div>';
     el.innerHTML = html;
     if (window.lucide) lucide.createIcons();
   } catch(e) {
@@ -3320,6 +4646,8 @@ window.addEventListener('DOMContentLoaded', function() {
     refreshAnchorCounter();
     setInterval(refreshAnchorCounter, 30000);
   }
+  updateChick(0);              // 小黄鸡蛋初始（loadBuckets 后会按真实总数更新）
+  startPlaceholderRotation();  // 搜索框随机 placeholder
 });
 window.addEventListener('load', function() {
   if (window.lucide) lucide.createIcons();
@@ -3501,10 +4829,13 @@ async function pollHeartbeat() {
     const d = await r.json();
     dot.style.background = '#3a9b5c';
     const idle = Math.floor((Date.now()/1000) - (d.last_op_ts || 0));
-    txt.textContent = '在线 · ' + (d.decay_engine === 'running' ? '衰减运行中' : '衰减停');
+    var decaying = d.decay_engine === 'running';
+    txt.textContent = '在线 · ' + (decaying ? '衰减运行中' : '衰减停');
     txt.title = 'uptime ' + d.uptime_s + 's · 上次活跃 ' + idle + 's 前';
+    dot.classList.toggle('breathing', decaying);   // 衰减引擎运行 → 轻微呼吸
   } catch (e) {
     dot.style.background = '#c45a3a';
+    dot.classList.remove('breathing');
     txt.textContent = '离线';
     txt.title = e.message;
   }
@@ -4011,6 +5342,13 @@ async function refreshAnchorCounter() {
     const d = await resp.json();
     const el = document.getElementById('anchor-counter-text');
     if (el) el.textContent = `${d.count}/${d.limit}`;
+    // 满额（24/24）→ 锚图标变沉，像「压舱物已经很重了」
+    const wrap = document.getElementById('anchor-counter');
+    if (wrap) {
+      const full = d.limit && d.count >= d.limit;
+      wrap.classList.toggle('full', !!full);
+      wrap.title = full ? 'anchor 已满（' + d.count + '/' + d.limit + '）— 要 anchor 新的，得先 release 一条旧的' : 'anchor = 坐标系桶，硬上限 ' + d.limit;
+    }
     return d;
   } catch(e) { /* ignore */ }
 }
@@ -4331,7 +5669,7 @@ function copyFeedback() {
      全程展示待删除桶列表
      ============================================================ -->
 <div id="purge-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(44,42,38,0.6);backdrop-filter:blur(4px);align-items:flex-start;justify-content:center;padding-top:40px;overflow-y:auto;">
-  <div style="background:var(--surface-solid);border:1px solid var(--border-strong);border-radius:4px;max-width:520px;width:92%;padding:28px 28px 22px;box-shadow:0 8px 40px rgba(44,42,38,0.22);margin-bottom:40px;">
+  <div style="background:var(--surface);border-radius:22px;max-width:520px;width:92%;padding:28px 28px 22px;box-shadow:0 20px 60px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.6), inset 0 0 0 2px rgba(190,90,65,0.35);margin-bottom:40px;">
 
     <!-- 待删除列表（全程显示） -->
     <div style="margin-bottom:18px;">
@@ -4372,19 +5710,19 @@ function copyFeedback() {
       </div>
     </div>
 
-    <!-- Step 3：倒计时按钮 -->
+    <!-- Step 3：长按解锁（交互阻尼，阻断误触） -->
     <div id="purge-step3" style="display:none;">
-      <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:10px;">第 3 步 / 3 &nbsp;·&nbsp; 最终执行</div>
+      <div style="font-size:13px;font-weight:600;color:var(--negative);margin-bottom:10px;">第 3 步 / 3 &nbsp;·&nbsp; 长按抹除</div>
       <p style="font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.6;">
-        此操作将立即开始，无法中断。按钮倒计时结束后方可点击。
+        此操作将立即开始，无法中断。<strong>按住下方按键 1.5 秒不松手</strong>，待进度条充满后才会执行；中途松手则取消。
       </p>
-      <div style="display:flex;justify-content:flex-end;gap:10px;">
-        <button onclick="closePurgeModal()" style="background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:2px;padding:6px 16px;font-size:12px;cursor:pointer;">取消</button>
-        <button id="purge-final-btn" onclick="executePurge()" disabled
-          style="background:var(--accent);border:none;color:#fff;border-radius:2px;padding:6px 22px;font-size:12px;cursor:not-allowed;opacity:0.4;min-width:110px;transition:opacity 0.2s;">
-          <span id="purge-countdown-label">确认删除 (5)</span>
-        </button>
-      </div>
+      <button id="purge-final-btn" class="danger-hold-btn"
+        onmousedown="purgeHoldStart(event)" onmouseup="purgeHoldEnd()" onmouseleave="purgeHoldEnd()"
+        ontouchstart="purgeHoldStart(event)" ontouchend="purgeHoldEnd()">
+        <span class="fill" id="purge-hold-fill"></span>
+        <span class="lbl" id="purge-countdown-label">按住以确认抹除全部记忆</span>
+      </button>
+      <button class="danger-cancel" onclick="closePurgeModal()">取消</button>
     </div>
 
   </div>
@@ -4512,27 +5850,44 @@ function purgeCheckStep2() {
 function purgeGoStep3() {
   document.getElementById('purge-step2').style.display = 'none';
   document.getElementById('purge-step3').style.display = '';
-  // 5 秒倒计时
-  var sec = 5;
+  purgeHoldEnd(); // reset
+}
+
+// —— 长按解锁：按住 1.5s 进度充满才触发，中途松手取消 ——
+var _purgeHoldTimer = null;
+var _purgeHoldStart = 0;
+var HOLD_MS = 1500;
+function purgeHoldStart(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  var btn = document.getElementById('purge-final-btn');
+  var fill = document.getElementById('purge-hold-fill');
   var label = document.getElementById('purge-countdown-label');
-  var finalBtn = document.getElementById('purge-final-btn');
-  label.textContent = '确认删除 (' + sec + ')';
-  finalBtn.disabled = true;
-  finalBtn.style.opacity = '0.4';
-  finalBtn.style.cursor = 'not-allowed';
-  _purgeCountdownTimer = setInterval(function() {
-    sec--;
-    if (sec > 0) {
-      label.textContent = '确认删除 (' + sec + ')';
-    } else {
-      clearInterval(_purgeCountdownTimer);
-      _purgeCountdownTimer = null;
-      label.textContent = '确认删除';
-      finalBtn.disabled = false;
-      finalBtn.style.opacity = '1';
-      finalBtn.style.cursor = 'pointer';
+  if (!btn || btn.classList.contains('done')) return;
+  btn.classList.add('armed');
+  _purgeHoldStart = Date.now();
+  if (_purgeHoldTimer) cancelAnimationFrame(_purgeHoldTimer);
+  (function tick() {
+    var pct = Math.min(100, (Date.now() - _purgeHoldStart) / HOLD_MS * 100);
+    fill.style.width = pct + '%';
+    if (pct >= 100) {
+      btn.classList.add('done');
+      label.textContent = '正在抹除…';
+      executePurge();
+      return;
     }
-  }, 1000);
+    label.textContent = '继续按住…';
+    _purgeHoldTimer = requestAnimationFrame(tick);
+  })();
+}
+function purgeHoldEnd() {
+  if (_purgeHoldTimer) { cancelAnimationFrame(_purgeHoldTimer); _purgeHoldTimer = null; }
+  var btn = document.getElementById('purge-final-btn');
+  var fill = document.getElementById('purge-hold-fill');
+  var label = document.getElementById('purge-countdown-label');
+  if (btn && btn.classList.contains('done')) return;
+  if (btn) btn.classList.remove('armed');
+  if (fill) fill.style.width = '0%';
+  if (label) label.textContent = '按住以确认抹除全部记忆';
 }
 
 async function executePurge() {
@@ -4560,8 +5915,11 @@ async function executePurge() {
     if (data.failed && data.failed.length) msg += '\n未能删除：' + data.failed.join(', ');
     alert(msg);
   } catch (e) {
-    label.textContent = '确认删除';
     btn.disabled = false;
+    btn.classList.remove('done', 'armed');
+    var fill = document.getElementById('purge-hold-fill');
+    if (fill) fill.style.width = '0%';
+    label.textContent = '按住以确认抹除全部记忆';
     alert('删除失败：' + e.message);
   }
 }

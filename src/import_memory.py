@@ -667,20 +667,13 @@ class ImportEngine:
         _human = self.config.get("human", "用户")
         prompt = IMPORT_EXTRACT_PROMPT.replace("用户", _human) if _human != "用户" else IMPORT_EXTRACT_PROMPT
 
-        response = await self.dehydrator.client.chat.completions.create(
-            model=self.dehydrator.model,
-            messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": chunk_content[:_EXTRACT_INPUT_LIMIT]},
-            ],
+        raw = await self.dehydrator._chat(
+            prompt,
+            chunk_content[:_EXTRACT_INPUT_LIMIT],
             max_tokens=_EXTRACT_MAX_TOKENS,
             temperature=_EXTRACT_TEMPERATURE,
         )
 
-        if not response.choices:
-            return []
-
-        raw = response.choices[0].message.content or ""
         if not raw.strip():
             return []
 

@@ -219,14 +219,23 @@ class Dehydrator:
         self.base_url = dehy_cfg.get("base_url", _DEFAULT_BASE_URL)
         self.max_tokens = dehy_cfg.get("max_tokens", _DEFAULT_MAX_TOKENS)
         self.temperature = dehy_cfg.get("temperature", _DEFAULT_TEMPERATURE)
+        # api_format: "openai_compat" (default) | "gemini" | "anthropic"
+        self.api_format = dehy_cfg.get("api_format", "openai_compat")
+        # thinking_budget: 仅 Gemini 2.5+/3.x「思考型」模型生效。默认 0 = 关闭思考。
+        # 关键：gemini-3.5-flash 等模型默认会先消耗 output token 做「思考」，当
+        # max_tokens 较小时思考会吃光预算 → 返回空文本（这正是脱水/抽取偶发返回
+        # 空、报 "LLM extraction failed" 的根因）。脱水/抽取是机械式转换，不需要
+        # 思考，关掉它既修了空输出、又更快更省。设为 None 可彻底不发该字段（兼容
+        # 不支持 thinkingConfig 的老模型）。
+        self.thinking_budget = dehy_cfg.get("thinking_budget", 0)
 
         # --- API availability / 是否有可用的 API ---
         self.api_available = bool(self.api_key)
 
-        # --- Initialize OpenAI-compatible client ---
-        # --- 初始化 OpenAI 兼容客户端 ---
+        # --- Initialize OpenAI-compatible client (only for openai_compat format) ---
+        # --- 初始化 OpenAI 兼容客户端（仅 openai_compat 格式使用）---
         self.client: Optional[AsyncOpenAI] = None
-        if self.api_available:
+        if self.api_available and self.api_format == "openai_compat":
             self.client = AsyncOpenAI(
                 api_key=self.api_key,
                 base_url=self.base_url,
@@ -322,6 +331,11 @@ class Dehydrator:
             max_tokens   — 覆盖默认（如 analyze 用 256，digest 用 2048）
             temperature  — 覆盖默认（如 digest / plan_judge 需要 0.0）
         """
+        if self.api_format == "gemini":
+            return await self._chat_gemini(system, user, max_tokens=max_tokens, temperature=temperature)
+        if self.api_format == "anthropic":
+            return await self._chat_anthropic(system, user, max_tokens=max_tokens, temperature=temperature)
+        # openai_compat (default)
         if self.client is None:
             return ""
         response = await self.client.chat.completions.create(
@@ -336,6 +350,75 @@ class Dehydrator:
         if not response.choices:
             return ""
         return response.choices[0].message.content or ""
+
+    async def _chat_gemini(
+        self,
+        system: str,
+        user: str,
+        *,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+    ) -> str:
+        """Native Gemini generateContent API call (no OpenAI-compat wrapper)."""
+        if not self.api_key:
+            return ""
+        import httpx
+        # Strip any accidental "models/" prefix — Google rejects double-prefix in the URL
+        model_id = self.model.removeprefix("models/").strip()
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent"
+        payload: dict = {
+            "system_instruction": {"parts": [{"text": system}]},
+            "contents": [{"role": "user", "parts": [{"text": user}]}],
+            "generationConfig": {
+                "maxOutputTokens": max_tokens if max_tokens is not None else self.max_tokens,
+                "temperature": temperature if temperature is not None else self.temperature,
+            },
+        }
+        # 关闭/限制思考预算（见 __init__ 的 thinking_budget 说明）。
+        if self.thinking_budget is not None:
+            payload["generationConfig"]["thinkingConfig"] = {"thinkingBudget": self.thinking_budget}
+        async with httpx.AsyncClient(timeout=_API_TIMEOUT_SECONDS) as client:
+            r = await client.post(url, params={"key": self.api_key}, json=payload)
+            r.raise_for_status()
+        data = r.json()
+        candidates = data.get("candidates", [])
+        if not candidates:
+            return ""
+        parts = candidates[0].get("content", {}).get("parts", [])
+        return parts[0].get("text", "") if parts else ""
+
+    async def _chat_anthropic(
+        self,
+        system: str,
+        user: str,
+        *,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+    ) -> str:
+        """Native Anthropic Messages API call."""
+        if not self.api_key:
+            return ""
+        import httpx
+        base = self.base_url.rstrip("/") if self.base_url else "https://api.anthropic.com"
+        url = f"{base}/v1/messages"
+        headers = {
+            "x-api-key": self.api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+        payload: dict = {
+            "model": self.model,
+            "max_tokens": max_tokens if max_tokens is not None else self.max_tokens,
+            "system": system,
+            "messages": [{"role": "user", "content": user}],
+            "temperature": temperature if temperature is not None else self.temperature,
+        }
+        async with httpx.AsyncClient(timeout=_API_TIMEOUT_SECONDS) as client:
+            r = await client.post(url, headers=headers, json=payload)
+            r.raise_for_status()
+        data = r.json()
+        content = data.get("content", [])
+        return content[0].get("text", "") if content else ""
 
     @staticmethod
     def _strip_md_fence(raw: str) -> str:

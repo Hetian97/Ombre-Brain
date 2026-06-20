@@ -1246,12 +1246,20 @@ class BucketManager:
         # 含 archive：软删除后的桶仍然需要可被内部路径查找。
         dirs = [self.permanent_dir, self.dynamic_dir, self.archive_dir,
                 self.feel_dir, self.plan_dir, self.letter_dir]
+        candidates = []
         for _root, fname, full_path in self._iter_md_files(dirs):
-            # Match by exact ID segment in filename
-            # 通过文件名中的 ID 片段精确匹配
             name_part = fname[:-3]  # remove .md
             if name_part == bucket_id or name_part.endswith(f"_{bucket_id}"):
                 return full_path
+            candidates.append(full_path)
+        # Fallback: check frontmatter id field (for imported files where filename ≠ id)
+        for full_path in candidates:
+            try:
+                post = frontmatter.load(full_path)
+                if post.get("id") == bucket_id:
+                    return full_path
+            except Exception:
+                pass
         return None
 
     # ---------------------------------------------------------

@@ -43,6 +43,22 @@ services:
       #   OMBRE_HOST_VAULT_DIR=~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Obsidian Vault/Ombre Brain
       - ${OMBRE_HOST_VAULT_DIR:-../buckets}:/data
       - ../config.yaml:/app/config.yaml
+    # 本地向量模型（可选）：取消注释 ollama 服务后，OB 默认按容器名
+    # http://ombre-ollama:11434 连接（同一 compose 网络，无需额外配置）。
+    # 也可用环境变量 OMBRE_OLLAMA_URL 覆盖。
+
+  # Local embedding model (optional) / 本地向量模型（可选）
+  # 启用本地 bge-m3：docker compose up -d ollama，然后在 Dashboard 设置页
+  # 「本地向量模型」面板点「下载 bge-m3」+「切换到本地并重算」。
+  ollama:
+    image: ollama/ollama:latest        # arm64 / amd64 均支持
+    container_name: ombre-ollama
+    restart: unless-stopped
+    volumes:
+      - ../ollama:/root/.ollama          # 持久化模型权重（宿主机 ./ollama），避免重启重下
+    # 不需要对外暴露端口；OB 通过内网容器名访问。如需本机直连可加：
+    # ports:
+    #   - "11434:11434"
 
   # Cloudflare Tunnel (optional) — expose to public internet
   # Cloudflare Tunnel（可选）— 暴露到公网

@@ -315,6 +315,15 @@ async def _run_migration(
     })
     write_status(status_path, cur)
 
+    # 成功后把 embeddings_meta 更新为目标后端的 model/dim，
+    # 否则 db_meta 还是旧值（如 gemini/768），重启会误报 OB-W005 维度不一致。
+    if failed_count == 0:
+        try:
+            cfg.target_engine._write_meta("model_name", cfg.target_model or "")
+            cfg.target_engine._write_meta("vector_dim", str(cfg.target_dim or 0))
+        except Exception as e:
+            logger.warning(f"[migration] update meta failed: {e}")
+
     # 完成后清掉 checkpoint（下次切换从头开始）
     if failed_count == 0:
         try:

@@ -32,3 +32,8 @@ rule.md
 models/
 test_analyze.py
 test_flow.py
+
+# 一次性诊断 / 部署脚本 —— 本地用，不上传
+tmp/
+# 本地设计预览稿（非应用文件）
+frontend/dashboard-preview.html
